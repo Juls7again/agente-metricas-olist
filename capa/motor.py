@@ -14,6 +14,7 @@ Reglas de diseño:
 """
 from __future__ import annotations
 
+import hashlib
 import re
 from datetime import date
 from pathlib import Path
@@ -72,6 +73,18 @@ def _limpio(v):
     return int(f) if f == int(f) and abs(f) < 1e15 else round(f, 2)
 
 
+def huella_capa(diccionario: Path = DICCIONARIO, modelos: Path = MODELOS) -> str:
+    """Huella corta del diccionario y de las vistas SQL. Cambia con cualquier edición de la capa.
+
+    Normaliza los saltos de línea para que la misma capa dé la misma huella en Windows y Linux.
+    """
+    h = hashlib.sha256()
+    for archivo in [Path(diccionario), *sorted(Path(modelos).glob("*.sql"))]:
+        h.update(archivo.name.encode("utf-8"))
+        h.update(archivo.read_bytes().replace(b"\r\n", b"\n"))
+    return h.hexdigest()[:12]
+
+
 class Motor:
     def __init__(self, bd: Path = BD, modelos: Path = MODELOS, diccionario: Path = DICCIONARIO,
                  con_modelos: bool = True):
@@ -81,6 +94,9 @@ class Motor:
         doc = yaml.safe_load(Path(diccionario).read_text(encoding="utf-8"))
         self.general: dict = doc["general"]
         self.metricas: dict = doc["metricas"]
+        # Sello que viaja en cada respuesta: con qué versión de la capa se calculó el número.
+        self.sello = {"version": str(self.general.get("version", "sin versión")),
+                      "huella": huella_capa(diccionario, modelos)}
         self.primer_mes = _a_fecha(self.general["primer_mes_completo"])
         self.ultimo_mes = _a_fecha(self.general["ultimo_mes_completo"])
         self.con = duckdb.connect(str(bd), read_only=True)
@@ -101,6 +117,7 @@ class Motor:
 
     def listar(self) -> dict:
         return {
+            "diccionario": self.sello,
             "general": self.general,
             "metricas": [
                 {"nombre": n, "etiqueta": m["etiqueta"], "grupo": m["grupo"], "unidad": m["unidad"],
@@ -120,6 +137,7 @@ class Motor:
         out["filtro_fijo"] = m.get("filtro")
         out["ventana_valida"] = m.get("ventana_valida")
         out["periodo_con_meses_completos"] = f"{_mes_txt(self.primer_mes)} a {_mes_txt(self.ultimo_mes)}"
+        out["diccionario"] = self.sello
         return out
 
     # --------------------------------------------------------------------- consulta
@@ -199,6 +217,7 @@ class Motor:
             "advertencias": advertencias,
             "filas": filas,
             "sql": self._sql_legible(sql, params),
+            "diccionario": self.sello,
         }
 
     @staticmethod
@@ -278,6 +297,7 @@ class Motor:
             "segmentos": segmentos[:25],
             "segmentos_omitidos": max(0, len(segmentos) - 25),
             "criterios_de_lectura": m["criterios_de_lectura"],
+            "diccionario": self.sello,
         }
 
     # --------------------------------------------------------------------- anomalías
@@ -334,6 +354,7 @@ class Motor:
             "no_evaluadas": no_evaluadas,
             "como_leer": "Una alerta dice que el mes se salió de su propia historia, no por qué. "
                          "Para la causa, usa descomponer_cambio sobre la métrica alertada.",
+            "diccionario": self.sello,
         }
 
     # ------------------------------------------------------------------ SQL libre

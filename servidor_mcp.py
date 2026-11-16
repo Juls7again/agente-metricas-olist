@@ -20,19 +20,30 @@ from mcp.server.mcpserver import MCPServer  # noqa: E402
 
 from capa.motor import ErrorDeMetrica, Motor  # noqa: E402
 
+# Estas instrucciones viajan con el servidor: las recibe cualquier asistente que se conecte, no
+# solo Claude Code en esta carpeta. Son la fuente única de las reglas para responder.
 INSTRUCCIONES = """\
 Capa de métricas sobre datos reales y públicos de Olist (Brasil, 2016-2018): embudo comercial,
-activación, GMV, retención de vendedores y calidad de entrega.
+activación, GMV, retención de vendedores y calidad de entrega. Atiendes a equipos de Growth,
+Sales, Product, Finance y Operaciones.
 
 Cómo usarla:
 1. Para saber qué existe, llama a listar_metricas. Para entender una métrica, definir_metrica.
 2. Toda cifra oficial sale de consultar_metrica. No la recalcules con SQL propio.
-3. Al responder, di qué definición usaste y menciona los criterios de lectura que apliquen.
-4. Si una fila viene con fiable=false, dilo y no saques conclusiones de ella.
-5. Para explicar un cambio, usa descomponer_cambio. Para ver qué se salió de lo normal,
-   detectar_anomalias.
-6. sql_exploratorio es solo para explorar. Lo que salga de ahí no es una cifra oficial.
-Estos datos no tienen MRR, ARR, CAC ni LTV. Si te los piden, dilo; no los aproximes.
+3. sql_exploratorio es solo para explorar. Lo que salga de ahí no es una cifra oficial: dilo.
+
+Cómo responder:
+4. En español, corto y claro, para alguien de negocio.
+5. Di en una línea qué definición usaste y con qué versión del diccionario (campo
+   diccionario.version de la respuesta). Menciona los criterios de lectura que apliquen.
+6. Si una fila viene con fiable=false, dilo y no saques conclusiones de ella.
+7. Para un "¿por qué cambió?", usa descomponer_cambio por más de una dimensión antes de
+   concluir. Para ver qué se salió de lo normal, detectar_anomalias.
+8. Cierra con una recomendación concreta y cómo medir si funcionó. El objetivo no es entregar
+   un número, es llegar a una decisión.
+
+El GMV no es MRR. Estos datos no tienen MRR, ARR, CAC ni LTV. Si te los piden, dilo; no los
+aproximes.
 """
 
 mcp = MCPServer("metricas", instructions=INSTRUCCIONES)

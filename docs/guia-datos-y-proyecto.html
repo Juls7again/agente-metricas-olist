@@ -1,0 +1,935 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Guía de datos y proyecto</title>
+<style>
+:root {
+  --tinta: #1d1d1b; --tinta2: #52514e; --tenue: #7a7973; --linea: #dcdbd5; --suave: #f4f3ef;
+  --azul: #2a78d6; --azul-suave: #eaf2fc; --naranja: #eb6834; --naranja-suave: #fdf0ea;
+}
+* { box-sizing: border-box; }
+html { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+body { margin: 0; background: #fff; color: var(--tinta);
+  font: 10.2pt/1.5 "Segoe UI", "Helvetica Neue", Arial, sans-serif; }
+main { max-width: 176mm; margin: 0 auto; padding: 8mm 0; }
+h1, h2, h3 { font-family: Georgia, "Times New Roman", serif; font-weight: 600; color: var(--tinta);
+  break-after: avoid; page-break-after: avoid; }
+h1 { font-size: 26pt; line-height: 1.15; margin: 0 0 6pt; letter-spacing: -0.01em; }
+h2 { font-size: 17pt; margin: 26pt 0 8pt; padding-top: 10pt; border-top: 1px solid var(--linea); }
+.capitulo h2 { margin-top: 0; padding-top: 0; border-top: 0; }
+h2 .num { color: var(--azul); margin-right: 6pt; }
+h3 { font-size: 12pt; margin: 16pt 0 5pt; }
+p { margin: 0 0 7pt; }
+ul, ol { margin: 0 0 8pt; padding-left: 16pt; }
+li { margin-bottom: 3pt; }
+code { font: 8.8pt/1.3 Consolas, "Cascadia Mono", monospace; background: var(--suave);
+  padding: 0 3px; border-radius: 3px; }
+b, strong { font-weight: 600; }
+.capitulo { break-before: page; page-break-before: always; }
+.portada { padding-top: 14mm; }
+.eyebrow { font-size: 8.5pt; letter-spacing: .12em; text-transform: uppercase; color: var(--azul);
+  font-weight: 600; margin-bottom: 10pt; }
+.subtitulo { font-size: 13pt; color: var(--tinta2); margin: 0 0 14pt; }
+.autor { font-size: 9.5pt; color: var(--tenue); border-top: 1px solid var(--linea); padding-top: 8pt;
+  margin-bottom: 18pt; }
+.lead { font-size: 11.5pt; line-height: 1.55; }
+.cifras { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8pt; margin: 14pt 0 16pt; }
+.cifra { border-top: 3px solid var(--azul); background: var(--suave); padding: 8pt 9pt 9pt; }
+.cifra b { display: block; font: 600 20pt/1.1 Georgia, serif; }
+.cifra span { font-size: 8.6pt; color: var(--tinta2); }
+.pasos { counter-reset: paso; list-style: none; padding: 0; }
+.pasos li { counter-increment: paso; position: relative; padding-left: 24pt; margin-bottom: 6pt; }
+.pasos li::before { content: counter(paso); position: absolute; left: 0; top: 0; width: 16pt; height: 16pt;
+  border-radius: 50%; background: var(--azul); color: #fff; font-size: 8.5pt; font-weight: 600;
+  text-align: center; line-height: 16pt; }
+.caja { background: var(--azul-suave); border-left: 3px solid var(--azul); padding: 8pt 11pt; margin: 10pt 0;
+  break-inside: avoid; }
+.caja.alerta { background: var(--naranja-suave); border-left-color: var(--naranja); }
+.caja p:last-child, .caja ul:last-child { margin-bottom: 0; }
+table { width: 100%; border-collapse: collapse; margin: 6pt 0 12pt; font-size: 8.9pt; line-height: 1.38; }
+th { text-align: left; font-weight: 600; color: var(--tinta2); border-bottom: 1.5px solid var(--tinta);
+  padding: 4pt 6pt 4pt 0; vertical-align: bottom; }
+td { border-bottom: 1px solid var(--linea); padding: 4pt 6pt 4pt 0; vertical-align: top; }
+tr { break-inside: avoid; page-break-inside: avoid; }
+td.n, th.n { text-align: right; white-space: nowrap; font-variant-numeric: tabular-nums; }
+td.grupo { color: var(--azul); font-weight: 600; white-space: nowrap; }
+td code { font-size: 8pt; }
+figure { margin: 10pt 0 14pt; break-inside: avoid; page-break-inside: avoid; }
+figcaption { font-size: 9.5pt; font-weight: 600; margin-bottom: 4pt; }
+figcaption span { display: block; font-weight: 400; color: var(--tinta2); font-size: 8.8pt; }
+.fuente { font-size: 8pt; color: var(--tenue); margin-top: 3pt; }
+svg { width: 100%; height: auto; display: block; }
+svg text { font-family: "Segoe UI", Arial, sans-serif; }
+svg .eje { font-size: 9.5px; fill: #6b6a64; }
+svg .eje.anio { font-weight: 600; fill: #3d3c38; }
+svg .valor { font-size: 10px; font-weight: 600; fill: #1d1d1b; }
+svg .cat { font-size: 10.5px; fill: #1d1d1b; }
+svg .nota { font-size: 9.5px; fill: #6b6a64; }
+.leyenda { display: flex; gap: 14pt; font-size: 8.8pt; color: var(--tinta2); margin: 2pt 0 4pt; }
+.leyenda i { display: inline-block; width: 10px; height: 10px; border-radius: 2px; margin-right: 5px;
+  vertical-align: -1px; }
+.ficha { border: 1px solid var(--linea); border-radius: 4px; margin: 8pt 0 12pt; break-inside: avoid; font-size: 8.9pt; }
+.ficha-cab { background: var(--suave); padding: 5pt 9pt; font-weight: 600; border-bottom: 1px solid var(--linea); }
+.ficha dl { display: grid; grid-template-columns: 30mm 1fr; margin: 0; padding: 6pt 9pt; gap: 3pt 8pt; }
+.ficha dt { color: var(--tinta2); font-weight: 600; }
+.ficha dd { margin: 0; }
+.ficha ul { margin: 0; padding-left: 12pt; }
+.dos { display: grid; grid-template-columns: 1fr 1fr; gap: 12pt; }
+.hallazgo h3 { margin-top: 18pt; }
+.glosario { display: grid; grid-template-columns: 38mm 1fr; gap: 4pt 10pt; margin: 0 0 10pt; font-size: 9.4pt; }
+.glosario dt { font-weight: 600; }
+.glosario dd { margin: 0; color: var(--tinta2); }
+pre { font: 8.6pt/1.45 Consolas, monospace; background: var(--suave); padding: 7pt 9pt; border-radius: 4px;
+  white-space: pre-wrap; break-inside: avoid; margin: 4pt 0 10pt; }
+.diagrama text { font-family: "Segoe UI", Arial, sans-serif; }
+@page { size: A4; margin: 16mm 17mm 18mm; }
+@media screen { body { background: #ecebe6; } main { background: #fff; padding: 16mm 17mm; margin: 10mm auto;
+  max-width: 210mm; box-shadow: 0 1px 4px rgba(0,0,0,.12); } }
+@media print { main { max-width: none; padding: 0; } }
+</style>
+</head>
+<body>
+<main>
+
+<!-- ======================================================================= PORTADA -->
+<section class="portada">
+  <div class="eyebrow">Reto de Alegra · Business Intelligence &amp; Analytics Partner</div>
+  <h1>Agente de métricas sobre datos reales de Olist</h1>
+  <p class="subtitulo">Qué datos usa, cómo está construido y qué encontró.</p>
+  <div class="autor">Julián Martínez Ortiz · noviembre de 2026 · construido con Claude Code</div>
+
+  <p class="lead">Es un analista al que se le pregunta en español. Responde con cifras de datos reales,
+  dice qué definición usó, avisa cuando un número no es fiable y termina en una recomendación con su
+  forma de medirla.</p>
+
+  <div class="cifras">
+    <div class="cifra"><b>11</b><span>tablas reales cargadas, todas cuadran con su CSV</span></div>
+    <div class="cifra"><b>23</b><span>métricas definidas en un solo diccionario</span></div>
+    <div class="cifra"><b>6</b><span>herramientas que el agente puede usar</span></div>
+    <div class="cifra"><b>107</b><span>pruebas automáticas en verde</span></div>
+  </div>
+
+  <h3>El problema que resuelve</h3>
+  <p>Cuando un asistente de IA escribe su propio SQL, responde rápido, pero con su propia versión de
+  cada métrica. Dos personas que preguntan lo mismo pueden recibir dos números distintos, y ninguno dice
+  qué contó ni qué dejó por fuera.</p>
+  <p>Aquí el asistente no inventa la métrica: se la pide a una capa que tiene <b>una sola definición de cada
+  una</b>. Es la misma que usaría un tablero o un analista.</p>
+
+  <h3>Cómo funciona, en cuatro pasos</h3>
+  <ol class="pasos">
+    <li>Los CSV de Olist se cargan en una base local (DuckDB) y se comprueba que no se perdió ninguna fila.</li>
+    <li>Cinco archivos SQL limpian los datos una sola vez: sacan los pedidos cancelados, evitan duplicados y
+    fijan ventanas de tiempo.</li>
+    <li>Un diccionario (<code>metricas.yml</code>) define las 23 métricas: fórmula, dueño, trampas conocidas y
+    equivalente en SaaS.</li>
+    <li>Un servidor MCP le da a Claude Code seis herramientas para usar ese diccionario. Claude Code no calcula
+    cifras oficiales por su cuenta.</li>
+  </ol>
+
+  <div class="caja">
+    <p><b>Cómo se construyó.</b> Con Claude Code, el 15 de noviembre de 2026. Julián tomó las decisiones de
+    producto y de datos: construir un agente nuevo, usar datos reales en vez de simulados, escoger Olist y
+    definir cómo se entrega. Claude Code escribió el código, el SQL y las pruebas a partir de esas decisiones.</p>
+  </div>
+</section>
+
+<!-- ======================================================================= 1. DATOS -->
+<section class="capitulo">
+  <h2><span class="num">1</span>Los datos</h2>
+
+  <h3>De dónde salen</h3>
+  <p>Son dos conjuntos de datos que publicó Olist en Kaggle:</p>
+  <ul>
+    <li><b>Marketing Funnel by Olist:</b> 8.000 leads calificados y 842 negocios cerrados.</li>
+    <li><b>Brazilian E-Commerce Public Dataset by Olist:</b> 99.441 pedidos de 2016 a 2018, con sus
+    ítems, pagos, reseñas, clientes, vendedores y productos.</li>
+  </ul>
+  <p>Son <b>datos reales</b> de la operación de Olist, anonimizados por la propia empresa. No son simulados.
+  Se escogieron después de revisar Kaggle: casi todos los datos de "SaaS" que hay allí son inventados, y el
+  único real que apareció (KKBox) solo permite usarse en su competencia, en investigación o en educación, y prohíbe redistribuirlo.</p>
+  <p>La licencia es <b>CC BY-NC-SA 4.0</b>: uso no comercial y con atribución a Olist. Los dos archivos se
+  bajan del enlace público de Kaggle, sin iniciar sesión, y pesan cerca de 45 MB comprimidos. El paquete
+  de entrega no los incluye: trae las instrucciones para bajarlos y el script que los carga.</p>
+
+  <h3>Qué es Olist y por qué sirve para este reto</h3>
+  <p>Olist es una empresa brasileña que conecta pequeños negocios con los grandes marketplaces de Brasil.
+  Un negocio se registra en Olist y vende sus productos a través de la tienda de Olist en esos marketplaces.
+  Eso deja dos procesos en los datos:</p>
+  <ul>
+    <li><b>Un embudo comercial B2B.</b> Un negocio deja sus datos en una página (lead), un SDR lo califica y un
+    ejecutivo comercial (SR) lo cierra. Hay 32 SDR y 22 SR en los datos. En este documento,
+    "vendedor" es siempre el negocio que vende en Olist, nunca el SR.</li>
+    <li><b>La actividad del negocio ya cerrado:</b> cuánto vende cada mes y cómo le va con sus clientes.</li>
+  </ul>
+  <p>Es el mismo dibujo de una empresa de software para pymes: conseguir pymes, cerrarlas y lograr que usen el
+  producto mes a mes. La tabla muestra dónde se parece y dónde no.</p>
+  <table>
+    <tr><th>En Olist</th><th>En un SaaS para pymes</th><th>La diferencia que importa</th></tr>
+    <tr><td>Lead calificado</td><td>Lead calificado (MQL)</td><td>Ninguna.</td></tr>
+    <tr><td>Negocio cerrado</td><td>Cliente nuevo</td><td>Ninguna.</td></tr>
+    <tr><td>Primera venta del vendedor</td><td>Activación</td><td>Ninguna: es el momento en que el cliente empieza a sacar valor.</td></tr>
+    <tr><td>GMV del vendedor en el mes</td><td>MRR de la cuenta</td><td>El GMV no es ingreso de Olist ni es recurrente por contrato. <b>Nunca se llama MRR.</b></td></tr>
+    <tr><td>Un mes sin ventas</td><td>Churn</td><td>En SaaS la baja es una cancelación. Aquí el vendedor puede volver al mes siguiente.</td></tr>
+    <tr><td>Entregas y reseñas</td><td>Salud de la cuenta, soporte</td><td>Miden el servicio al cliente final, no al vendedor.</td></tr>
+  </table>
+
+  <h3>Las 11 tablas</h3>
+  <table>
+    <tr><th>Tabla</th><th class="n">Filas</th><th>Un renglón es</th><th>Lo que usa el proyecto</th></tr>
+    <tr><td><code>marketing_qualified_leads</code></td><td class="n">8.000</td><td>un lead calificado</td><td>fecha del primer contacto, origen, página de entrada</td></tr>
+    <tr><td><code>closed_deals</code></td><td class="n">842</td><td>un negocio cerrado</td><td>fecha de cierre, vendedor en que se convirtió, tipo de lead, tipo de negocio, segmento, SDR y SR</td></tr>
+    <tr><td><code>sellers</code></td><td class="n">3.095</td><td>un vendedor</td><td>estado de Brasil del vendedor</td></tr>
+    <tr><td><code>orders</code></td><td class="n">99.441</td><td>un pedido</td><td>estado del pedido, fecha de compra, fecha de entrega real y prometida</td></tr>
+    <tr><td><code>order_items</code></td><td class="n">112.650</td><td>un producto dentro de un pedido</td><td>precio y vendedor: es la base del GMV</td></tr>
+    <tr><td><code>order_payments</code></td><td class="n">103.886</td><td>un pago de un pedido</td><td>nada. Un pedido puede tener varios pagos (ver trampas)</td></tr>
+    <tr><td><code>order_reviews</code></td><td class="n">99.224</td><td>una reseña</td><td>nota de 1 a 5</td></tr>
+    <tr><td><code>customers</code></td><td class="n">99.441</td><td>un cliente en un pedido</td><td>estado del cliente. La persona real es <code>customer_unique_id</code> (96.096)</td></tr>
+    <tr><td><code>products</code></td><td class="n">32.951</td><td>un producto</td><td>categoría</td></tr>
+    <tr><td><code>product_category_name_translation</code></td><td class="n">71</td><td>una categoría</td><td>nombre en inglés</td></tr>
+    <tr><td><code>geolocation</code></td><td class="n">1.000.163</td><td>un código postal con coordenadas</td><td>nada</td></tr>
+  </table>
+  <p><code>datos/cargar.py</code> carga cada CSV en una tabla de DuckDB y compara el número de filas con el
+  del archivo. Las 11 cuadran. <code>closed_deals</code> trae más campos declarados por el vendedor, pero casi
+  vacíos: solo 63 de 842 cierres dicen si tienen empresa y solo 45 declaran un
+  ingreso mensual. Por eso no se usan.</p>
+
+  <h3>Cómo se conectan</h3>
+  <figure class="diagrama"><figcaption>Cómo se unen las tablas<span>Arriba, el embudo comercial. Abajo, los pedidos. Las flechas dicen por qué columna se unen.</span></figcaption><svg viewBox="0 0 660 300" role="img" aria-label="Modelo de datos de Olist"><defs><marker id="punta" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#52514e"/></marker></defs><rect x="2" y="6" width="656" height="78" rx="6" fill="#f4f8fd"/><text x="12" y="22" font-size="9.5" font-weight="600" fill="#2a78d6">EMBUDO · Marketing Funnel</text><rect x="2" y="104" width="656" height="192" rx="6" fill="#f7f6f2"/><text x="12" y="120" font-size="9.5" font-weight="600" fill="#52514e">PEDIDOS · Brazilian E-Commerce</text><rect x="20" y="32" width="170" height="42" rx="5" fill="#ffffff" stroke="#2a78d6" stroke-width="1.5"/><text x="105.0" y="49.0" text-anchor="middle" font-size="11" font-weight="600" fill="#1d1d1b">marketing_qualified_leads</text><text x="105.0" y="63.0" text-anchor="middle" font-size="9.5" fill="#52514e">8.000 leads</text><rect x="250" y="32" width="150" height="42" rx="5" fill="#ffffff" stroke="#2a78d6" stroke-width="1.5"/><text x="325.0" y="49.0" text-anchor="middle" font-size="11" font-weight="600" fill="#1d1d1b">closed_deals</text><text x="325.0" y="63.0" text-anchor="middle" font-size="9.5" fill="#52514e">842 cierres</text><line x1="190" y1="53" x2="248" y2="53" stroke="#52514e" stroke-width="1.3" marker-end="url(#punta)"/><text x="219.0" y="48.0" text-anchor="middle" font-size="9" font-family="Consolas, monospace" fill="#52514e">mql_id</text><rect x="470" y="130" width="150" height="42" rx="5" fill="#ffffff" stroke="#eb6834" stroke-width="2"/><text x="545.0" y="147.0" text-anchor="middle" font-size="11" font-weight="600" fill="#1d1d1b">sellers</text><text x="545.0" y="161.0" text-anchor="middle" font-size="9.5" fill="#52514e">3.095 vendedores</text><path d="M400,53 L545,53 L545,128" fill="none" stroke="#eb6834" stroke-width="2" marker-end="url(#punta)"/><text x="470" y="47" text-anchor="middle" font-size="9" font-family="Consolas, monospace" fill="#eb6834">seller_id · el único puente</text><rect x="250" y="130" width="150" height="42" rx="5" fill="#ffffff" stroke="#2a78d6" stroke-width="1.5"/><text x="325.0" y="147.0" text-anchor="middle" font-size="11" font-weight="600" fill="#1d1d1b">order_items</text><text x="325.0" y="161.0" text-anchor="middle" font-size="9.5" fill="#52514e">112.650 ítems</text><line x1="468" y1="151" x2="402" y2="151" stroke="#52514e" stroke-width="1.3" marker-end="url(#punta)"/><text x="435.0" y="146.0" text-anchor="middle" font-size="9" font-family="Consolas, monospace" fill="#52514e">seller_id</text><rect x="250" y="222" width="150" height="42" rx="5" fill="#ffffff" stroke="#2a78d6" stroke-width="1.5"/><text x="325.0" y="239.0" text-anchor="middle" font-size="11" font-weight="600" fill="#1d1d1b">orders</text><text x="325.0" y="253.0" text-anchor="middle" font-size="9.5" fill="#52514e">99.441 pedidos</text><line x1="325" y1="172" x2="325" y2="220" stroke="#52514e" stroke-width="1.3" marker-end="url(#punta)"/><text x="351.0" y="200.0" text-anchor="middle" font-size="9" font-family="Consolas, monospace" fill="#52514e">order_id</text><rect x="20" y="130" width="150" height="42" rx="5" fill="#ffffff" stroke="#2a78d6" stroke-width="1.5"/><text x="95.0" y="147.0" text-anchor="middle" font-size="11" font-weight="600" fill="#1d1d1b">products</text><text x="95.0" y="161.0" text-anchor="middle" font-size="9.5" fill="#52514e">32.951 productos</text><line x1="248" y1="151" x2="172" y2="151" stroke="#52514e" stroke-width="1.3" marker-end="url(#punta)"/><text x="210.0" y="146.0" text-anchor="middle" font-size="9" font-family="Consolas, monospace" fill="#52514e">product_id</text><rect x="20" y="222" width="150" height="42" rx="5" fill="#ffffff" stroke="#2a78d6" stroke-width="1.5"/><text x="95.0" y="239.0" text-anchor="middle" font-size="11" font-weight="600" fill="#1d1d1b">customers</text><text x="95.0" y="253.0" text-anchor="middle" font-size="9.5" fill="#52514e">99.441 clientes</text><line x1="248" y1="243" x2="172" y2="243" stroke="#52514e" stroke-width="1.3" marker-end="url(#punta)"/><text x="210.0" y="238.0" text-anchor="middle" font-size="9" font-family="Consolas, monospace" fill="#52514e">customer_id</text><rect x="470" y="196" width="150" height="36" rx="5" fill="#ffffff" stroke="#bdbcb6" stroke-width="1.5"/><text x="545.0" y="210.0" text-anchor="middle" font-size="11" font-weight="600" fill="#1d1d1b">order_payments</text><text x="545.0" y="224.0" text-anchor="middle" font-size="9.5" fill="#52514e">103.886 pagos</text><rect x="470" y="246" width="150" height="36" rx="5" fill="#ffffff" stroke="#2a78d6" stroke-width="1.5"/><text x="545.0" y="260.0" text-anchor="middle" font-size="11" font-weight="600" fill="#1d1d1b">order_reviews</text><text x="545.0" y="274.0" text-anchor="middle" font-size="9.5" fill="#52514e">99.224 reseñas</text><line x1="402" y1="236" x2="468" y2="214" stroke="#52514e" stroke-width="1.3" marker-end="url(#punta)"/><line x1="402" y1="250" x2="468" y2="264" stroke="#52514e" stroke-width="1.3" marker-end="url(#punta)"/><text x="435.0" y="271.0" text-anchor="middle" font-size="9" font-family="Consolas, monospace" fill="#52514e">order_id</text><text x="545" y="192" text-anchor="middle" font-size="8.5" fill="#52514e">no se usa para el GMV</text><text x="95" y="186" text-anchor="middle" font-size="8.5" fill="#52514e">+ traducción de categorías (71)</text></svg></figure>
+  <p>El puente entre el embudo y los pedidos es <code>seller_id</code>, y solo existe para los negocios
+  cerrados: de un lead que no cerró no se sabe nada más. De los 842 cierres, <b>379
+  aparecen con al menos una venta válida</b>. Los demás nunca vendieron o cerraron cuando los pedidos ya
+  terminaban.</p>
+
+  <h3>Qué periodo cubre cada parte</h3>
+  <figure class="diagrama"><figcaption>Qué fechas cubre cada parte<span>En naranja, las ventanas en las que una métrica se puede leer sin sesgo.</span></figcaption><svg viewBox="0 0 660 196" role="img" aria-label="Cobertura de fechas"><line x1="221.4" x2="221.4" y1="6" y2="168" stroke="#e4e3de" stroke-width="1"/><line x1="435.7" x2="435.7" y1="6" y2="168" stroke="#e4e3de" stroke-width="1"/><text x="140" y="24" text-anchor="end" font-size="10" fill="#1d1d1b">Pedidos registrados</text><rect x="150.0" y="14" width="464.3" height="14" rx="3" fill="#bdbcb6"/><text x="156.0" y="24.5" font-size="9" fill="#1d1d1b">sep-2016 a oct-2018</text><text x="140" y="50" text-anchor="end" font-size="10" fill="#1d1d1b">Meses completos</text><rect x="221.4" y="40" width="357.1" height="14" rx="3" fill="#2a78d6"/><text x="227.4" y="50.5" font-size="9" fill="#ffffff">ene-2017 a ago-2018</text><text x="140" y="76" text-anchor="end" font-size="10" fill="#1d1d1b">Leads (primer contacto)</text><rect x="310.7" y="66" width="214.3" height="14" rx="3" fill="#2a78d6"/><text x="316.7" y="76.5" font-size="9" fill="#ffffff">jun-2017 a may-2018</text><text x="140" y="102" text-anchor="end" font-size="10" fill="#1d1d1b">Cierres registrados</text><rect x="417.9" y="92" width="214.3" height="14" rx="3" fill="#2a78d6"/><text x="423.9" y="102.5" font-size="9" fill="#ffffff">dic-2017 a nov-2018</text><text x="140" y="128" text-anchor="end" font-size="10" fill="#1d1d1b">Tasa de cierre legible</text><rect x="435.7" y="118" width="89.3" height="14" rx="3" fill="#eb6834"/><text x="531.0" y="128.5" font-size="9" fill="#1d1d1b">leads de ene a may-2018</text><text x="140" y="154" text-anchor="end" font-size="10" fill="#1d1d1b">Activación a 90 días</text><rect x="417.9" y="144" width="107.1" height="14" rx="3" fill="#eb6834"/><text x="531.0" y="154.5" font-size="9" fill="#1d1d1b">cierres hasta jun-2018</text><text x="150.0" y="186" text-anchor="middle" font-size="9.5" fill="#52514e">sep 2016</text><text x="221.4" y="186" text-anchor="middle" font-size="9.5" fill="#52514e">2017</text><text x="435.7" y="186" text-anchor="middle" font-size="9.5" fill="#52514e">2018</text><text x="650.0" y="186" text-anchor="middle" font-size="9.5" fill="#52514e">2019</text></svg></figure>
+  <p>Las tres partes no cubren las mismas fechas, y eso decide qué se puede medir:</p>
+  <ul>
+    <li><b>Pedidos:</b> de septiembre de 2016 a octubre de 2018, pero solo de enero de 2017 a agosto de 2018
+    son meses completos. Antes y después hay entre 1 y 324 pedidos por mes, frente a
+    miles en un mes normal.</li>
+    <li><b>Leads:</b> primer contacto entre junio de 2017 y mayo de 2018. Es una muestra aleatoria, no el total.</li>
+    <li><b>Cierres:</b> de diciembre de 2017 a noviembre de 2018. Antes de diciembre de 2017 no hay ningún
+    cierre registrado, aunque sí hay leads de esos meses.</li>
+  </ul>
+
+  <h3>Lo que estos datos no tienen</h3>
+  <div class="caja alerta">
+    <p>No hay suscripciones, precios, comisiones de Olist ni gasto de adquisición. Por eso <b>no se puede
+    calcular MRR, ARR, CAC ni LTV</b>, y el proyecto no los aproxima. Si se los piden al agente, dice que no
+    están.</p>
+    <p>La mecánica sí se muestra con datos reales: cohortes, retención neta y bruta, churn y movimientos de
+    expansión y contracción, calculados sobre el GMV de los vendedores en lugar del MRR de las cuentas.</p>
+  </div>
+</section>
+
+<!-- ======================================================================= TRAMPAS -->
+<section>
+  <h2><span class="num">2</span>Las trampas de estos datos</h2>
+  <p>Son errores que no se ven en el resultado: el número sale, se ve razonable y está mal. Todos aparecieron
+  en la exploración de los datos reales. Cada uno quedó resuelto una sola vez en la capa, para que ninguna
+  métrica ni ningún agente tenga que acordarse.</p>
+  <table>
+    <tr><th>Trampa</th><th>Qué pasa si se ignora</th><th>Cómo quedó resuelta</th></tr>
+    <tr><td>Unir ítems con pagos</td><td>Un pedido con dos pagos duplica sus ítems. El GMV sale 4,5 % más alto: 14,21 M en vez de 13,59 M.</td><td>La vista de ítems nunca toca la tabla de pagos.</td></tr>
+    <tr><td>Pedidos cancelados o no disponibles</td><td>Entran 1.234 pedidos que no fueron venta.</td><td>Se excluyen en la vista de pedidos, una sola vez.</td></tr>
+    <tr><td>Meses incompletos</td><td>2016 y septiembre-octubre de 2018 parecen caídas del negocio.</td><td>Las cifras oficiales van de enero de 2017 a agosto de 2018.</td></tr>
+    <tr><td>Censura en la activación</td><td>La activación parece desplomarse en los cierres recientes.</td><td>Se mide con una ventana fija de 90 días (gráfico abajo).</td></tr>
+    <tr><td>Cierres registrados solo desde diciembre de 2017</td><td>Los leads de 2017 parecen cerrar entre 1 % y 5 %.</td><td>La tasa de cierre solo se lee para leads de enero a mayo de 2018.</td></tr>
+    <tr><td>Muestras pequeñas</td><td>Un segmento con 6 cierres da un porcentaje que parece un hallazgo.</td><td>Cada métrica tiene una muestra mínima. Por debajo, sale marcada como no fiable.</td></tr>
+    <tr><td>Pedidos sin ítems</td><td>775 pedidos no tienen productos.</td><td>No entran al GMV ni al conteo de pedidos.</td></tr>
+  </table>
+
+  <figure>
+    <figcaption>La activación parece caer, pero es falta de tiempo
+      <span>Porcentaje de negocios cerrados que hicieron al menos una venta, según el mes del cierre.</span></figcaption>
+    <div class="leyenda"><span><i style="background:#eb6834"></i>Sin ventana: cualquier venta hasta agosto de 2018</span><span><i style="background:#2a78d6"></i>Con ventana de 90 días</span></div>
+    <svg viewBox="0 0 660 230" role="img" aria-label="Activación de los cierres por mes de cierre, con y sin ventana de 90 días">
+<rect x="279.8" y="14" width="294.2" height="182" fill="#f2f1ec"/>
+<text x="287.8" y="28" class="nota">Aún sin 90 días de observación</text>
+<line x1="44" x2="568.0" y1="196.0" y2="196.0" stroke="#e4e3de" stroke-width="1"/>
+<text x="36" y="199.5" text-anchor="end" class="eje">0 %</text>
+<line x1="44" x2="568.0" y1="135.3" y2="135.3" stroke="#e4e3de" stroke-width="1"/>
+<text x="36" y="138.8" text-anchor="end" class="eje">20 %</text>
+<line x1="44" x2="568.0" y1="74.7" y2="74.7" stroke="#e4e3de" stroke-width="1"/>
+<text x="36" y="78.2" text-anchor="end" class="eje">40 %</text>
+<line x1="44" x2="568.0" y1="14.0" y2="14.0" stroke="#e4e3de" stroke-width="1"/>
+<text x="36" y="17.5" text-anchor="end" class="eje">60 %</text>
+<text x="44.0" y="209" text-anchor="middle" class="eje">ene</text>
+<text x="44.0" y="222" text-anchor="middle" class="eje anio">2018</text>
+<text x="96.4" y="209" text-anchor="middle" class="eje">feb</text>
+<text x="148.8" y="209" text-anchor="middle" class="eje">mar</text>
+<text x="201.2" y="209" text-anchor="middle" class="eje">abr</text>
+<text x="253.6" y="209" text-anchor="middle" class="eje">may</text>
+<text x="306.0" y="209" text-anchor="middle" class="eje">jun</text>
+<text x="358.4" y="209" text-anchor="middle" class="eje">jul</text>
+<text x="410.8" y="209" text-anchor="middle" class="eje">ago</text>
+<text x="463.2" y="209" text-anchor="middle" class="eje">sep</text>
+<text x="515.6" y="209" text-anchor="middle" class="eje">oct</text>
+<text x="568.0" y="209" text-anchor="middle" class="eje">nov</text>
+<polyline points="44.0,25.6 96.4,32.3 148.8,43.3 201.2,45.1 253.6,36.9 306.0,73.6 358.4,114.0 410.8,177.6 463.2,196.0 515.6,196.0 568.0,196.0" fill="none" stroke="#eb6834" stroke-width="2" stroke-linejoin="round"/>
+<circle cx="44.0" cy="25.6" r="4" fill="#eb6834" stroke="#ffffff" stroke-width="2"><title>Sin ventana 2018-01: 56,2</title></circle>
+<circle cx="96.4" cy="32.3" r="4" fill="#eb6834" stroke="#ffffff" stroke-width="2"><title>Sin ventana 2018-02: 54,0</title></circle>
+<circle cx="148.8" cy="43.3" r="4" fill="#eb6834" stroke="#ffffff" stroke-width="2"><title>Sin ventana 2018-03: 50,3</title></circle>
+<circle cx="201.2" cy="45.1" r="4" fill="#eb6834" stroke="#ffffff" stroke-width="2"><title>Sin ventana 2018-04: 49,8</title></circle>
+<circle cx="253.6" cy="36.9" r="4" fill="#eb6834" stroke="#ffffff" stroke-width="2"><title>Sin ventana 2018-05: 52,5</title></circle>
+<circle cx="306.0" cy="73.6" r="4" fill="#eb6834" stroke="#ffffff" stroke-width="2"><title>Sin ventana 2018-06: 40,4</title></circle>
+<circle cx="358.4" cy="114.0" r="4" fill="#eb6834" stroke="#ffffff" stroke-width="2"><title>Sin ventana 2018-07: 27,0</title></circle>
+<circle cx="410.8" cy="177.6" r="4" fill="#eb6834" stroke="#ffffff" stroke-width="2"><title>Sin ventana 2018-08: 6,1</title></circle>
+<circle cx="463.2" cy="196.0" r="4" fill="#eb6834" stroke="#ffffff" stroke-width="2"><title>Sin ventana 2018-09: 0,0</title></circle>
+<circle cx="515.6" cy="196.0" r="4" fill="#eb6834" stroke="#ffffff" stroke-width="2"><title>Sin ventana 2018-10: 0,0</title></circle>
+<circle cx="568.0" cy="196.0" r="4" fill="#eb6834" stroke="#ffffff" stroke-width="2"><title>Sin ventana 2018-11: 0,0</title></circle>
+<text x="368.4" y="106.0" text-anchor="start" class="valor">sin ventana</text>
+<polyline points="44.0,63.0 96.4,77.9 148.8,70.1 201.2,67.0 253.6,41.8" fill="none" stroke="#2a78d6" stroke-width="2" stroke-linejoin="round"/>
+<circle cx="44.0" cy="63.0" r="4" fill="#2a78d6" stroke="#ffffff" stroke-width="2"><title>Ventana de 90 días 2018-01: 43,8</title></circle>
+<circle cx="96.4" cy="77.9" r="4" fill="#2a78d6" stroke="#ffffff" stroke-width="2"><title>Ventana de 90 días 2018-02: 38,9</title></circle>
+<circle cx="148.8" cy="70.1" r="4" fill="#2a78d6" stroke="#ffffff" stroke-width="2"><title>Ventana de 90 días 2018-03: 41,5</title></circle>
+<circle cx="201.2" cy="67.0" r="4" fill="#2a78d6" stroke="#ffffff" stroke-width="2"><title>Ventana de 90 días 2018-04: 42,5</title></circle>
+<circle cx="253.6" cy="41.8" r="4" fill="#2a78d6" stroke="#ffffff" stroke-width="2"><title>Ventana de 90 días 2018-05: 50,8</title></circle>
+<text x="96.4" y="99.9" text-anchor="middle" class="valor">con ventana de 90 días</text>
+<line x1="44" x2="568.0" y1="196.0" y2="196.0" stroke="#52514e" stroke-width="1"/>
+</svg>
+    <div class="fuente">Fuente: vista <code>v_cierres</code>. La línea azul solo incluye meses con al menos 30 cierres observables durante 90 días.</div>
+  </figure>
+  <p>Los pedidos terminan el 31 de agosto de 2018. Un negocio que cerró en enero tuvo siete meses para hacer
+  su primera venta; uno que cerró en agosto tuvo días. Sin ventana, la activación "cae" de 56 % a
+  6 % y luego a 0 %. Con la ventana de 90 días, cada cierre tiene el mismo tiempo para vender y la
+  tasa se queda entre 39 % y 51 %. <b>No hubo caída: faltaba tiempo.</b></p>
+
+  <figure>
+    <figcaption>Los leads de 2017 parecen no cerrar, pero sus cierres no están en los datos
+      <span>Tasa de cierre (%) según el mes en que entró el lead. En gris, meses fuera de la ventana válida.</span></figcaption>
+    <svg viewBox="0 0 660 200" role="img" aria-label="Tasa de cierre por mes de entrada del lead">
+<line x1="52" x2="654" y1="166.0" y2="166.0" stroke="#e4e3de" stroke-width="1"/>
+<text x="44" y="169.5" text-anchor="end" class="eje">0 %</text>
+<line x1="52" x2="654" y1="129.5" y2="129.5" stroke="#e4e3de" stroke-width="1"/>
+<text x="44" y="133.0" text-anchor="end" class="eje">4 %</text>
+<line x1="52" x2="654" y1="93.0" y2="93.0" stroke="#e4e3de" stroke-width="1"/>
+<text x="44" y="96.5" text-anchor="end" class="eje">8 %</text>
+<line x1="52" x2="654" y1="56.5" y2="56.5" stroke="#e4e3de" stroke-width="1"/>
+<text x="44" y="60.0" text-anchor="end" class="eje">12 %</text>
+<line x1="52" x2="654" y1="20.0" y2="20.0" stroke="#e4e3de" stroke-width="1"/>
+<text x="44" y="23.5" text-anchor="end" class="eje">16 %</text>
+<text x="77.1" y="179" text-anchor="middle" class="eje">jun</text>
+<text x="77.1" y="192" text-anchor="middle" class="eje anio">2017</text>
+<path d="M110.7,166.0 L110.7,161.3 Q110.7,158.3 113.7,158.3 L140.8,158.3 Q143.8,158.3 143.8,161.3 L143.8,166.0 Z" fill="#bdbcb6"><title>2017-07: 0,8</title></path>
+<text x="127.2" y="153.3" text-anchor="middle" class="valor">0,8</text>
+<text x="127.2" y="179" text-anchor="middle" class="eje">jul</text>
+<path d="M160.9,166.0 L160.9,147.7 Q160.9,144.7 163.9,144.7 L191.0,144.7 Q194.0,144.7 194.0,147.7 L194.0,166.0 Z" fill="#bdbcb6"><title>2017-08: 2,3</title></path>
+<text x="177.4" y="139.7" text-anchor="middle" class="valor">2,3</text>
+<text x="177.4" y="179" text-anchor="middle" class="eje">ago</text>
+<path d="M211.0,166.0 L211.0,148.6 Q211.0,145.6 214.0,145.6 L241.1,145.6 Q244.1,145.6 244.1,148.6 L244.1,166.0 Z" fill="#bdbcb6"><title>2017-09: 2,2</title></path>
+<text x="227.6" y="140.6" text-anchor="middle" class="valor">2,2</text>
+<text x="227.6" y="179" text-anchor="middle" class="eje">sep</text>
+<path d="M261.2,166.0 L261.2,138.2 Q261.2,135.2 264.2,135.2 L291.3,135.2 Q294.3,135.2 294.3,138.2 L294.3,166.0 Z" fill="#bdbcb6"><title>2017-10: 3,4</title></path>
+<text x="277.8" y="130.2" text-anchor="middle" class="valor">3,4</text>
+<text x="277.8" y="179" text-anchor="middle" class="eje">oct</text>
+<path d="M311.4,166.0 L311.4,132.1 Q311.4,129.1 314.4,129.1 L341.5,129.1 Q344.5,129.1 344.5,132.1 L344.5,166.0 Z" fill="#bdbcb6"><title>2017-11: 4,0</title></path>
+<text x="327.9" y="124.1" text-anchor="middle" class="valor">4,0</text>
+<text x="327.9" y="179" text-anchor="middle" class="eje">nov</text>
+<path d="M361.5,166.0 L361.5,118.8 Q361.5,115.8 364.5,115.8 L391.6,115.8 Q394.6,115.8 394.6,118.8 L394.6,166.0 Z" fill="#bdbcb6"><title>2017-12: 5,5</title></path>
+<text x="378.1" y="110.8" text-anchor="middle" class="valor">5,5</text>
+<text x="378.1" y="179" text-anchor="middle" class="eje">dic</text>
+<path d="M411.7,166.0 L411.7,47.5 Q411.7,44.5 414.7,44.5 L441.8,44.5 Q444.8,44.5 444.8,47.5 L444.8,166.0 Z" fill="#2a78d6"><title>2018-01: 13,3</title></path>
+<text x="428.2" y="39.5" text-anchor="middle" class="valor">13,3</text>
+<text x="428.2" y="179" text-anchor="middle" class="eje">ene</text>
+<text x="428.2" y="192" text-anchor="middle" class="eje anio">2018</text>
+<path d="M461.9,166.0 L461.9,36.8 Q461.9,33.8 464.9,33.8 L492.0,33.8 Q495.0,33.8 495.0,36.8 L495.0,166.0 Z" fill="#2a78d6"><title>2018-02: 14,5</title></path>
+<text x="478.4" y="28.8" text-anchor="middle" class="valor">14,5</text>
+<text x="478.4" y="179" text-anchor="middle" class="eje">feb</text>
+<path d="M512.0,166.0 L512.0,39.2 Q512.0,36.2 515.0,36.2 L542.1,36.2 Q545.1,36.2 545.1,39.2 L545.1,166.0 Z" fill="#2a78d6"><title>2018-03: 14,2</title></path>
+<text x="528.6" y="31.2" text-anchor="middle" class="valor">14,2</text>
+<text x="528.6" y="179" text-anchor="middle" class="eje">mar</text>
+<path d="M562.2,166.0 L562.2,45.4 Q562.2,42.4 565.2,42.4 L592.3,42.4 Q595.3,42.4 595.3,45.4 L595.3,166.0 Z" fill="#2a78d6"><title>2018-04: 13,5</title></path>
+<text x="578.7" y="37.4" text-anchor="middle" class="valor">13,5</text>
+<text x="578.7" y="179" text-anchor="middle" class="eje">abr</text>
+<path d="M612.4,166.0 L612.4,77.9 Q612.4,74.9 615.4,74.9 L642.5,74.9 Q645.5,74.9 645.5,77.9 L645.5,166.0 Z" fill="#eb6834"><title>2018-05: 10,0</title></path>
+<text x="628.9" y="69.9" text-anchor="middle" class="valor">10,0</text>
+<text x="628.9" y="179" text-anchor="middle" class="eje">may</text>
+<line x1="52" x2="654" y1="166.0" y2="166.0" stroke="#52514e" stroke-width="1"/>
+</svg>
+    <div class="fuente">Fuente: métrica <code>tasa_cierre</code>. En naranja, mayo de 2018: el motor lo marca como alerta (ver hallazgos).</div>
+  </figure>
+</section>
+
+<!-- ======================================================================= 3. PROYECTO -->
+<section>
+  <h2><span class="num">3</span>El proyecto</h2>
+
+  <h3>La idea: una definición, tres consumidores</h3>
+  <p>Growth pregunta por la activación, Sales por la conversión y Finance por la retención. Si cada uno, o cada
+  asistente de IA, calcula a su manera, salen números distintos para la misma pregunta. La capa de métricas
+  guarda una sola definición de cada una. El agente, un tablero y un analista la leen del mismo lugar, así que
+  no pueden contradecirse.</p>
+
+  <h3>Arquitectura</h3>
+  <figure class="diagrama"><svg viewBox="0 0 660 250" role="img" aria-label="Arquitectura del proyecto"><defs><marker id="punta" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#52514e"/></marker></defs><rect x="6" y="20" width="104" height="46" rx="5" fill="#ffffff" stroke="#2a78d6" stroke-width="1.5"/><text x="58.0" y="39.0" text-anchor="middle" font-size="11" font-weight="600" fill="#1d1d1b">CSV de Olist</text><text x="58.0" y="53.0" text-anchor="middle" font-size="9.5" fill="#52514e">11 archivos</text><rect x="134" y="20" width="104" height="46" rx="5" fill="#ffffff" stroke="#2a78d6" stroke-width="1.5"/><text x="186.0" y="39.0" text-anchor="middle" font-size="11" font-weight="600" fill="#1d1d1b">olist.duckdb</text><text x="186.0" y="53.0" text-anchor="middle" font-size="9.5" fill="#52514e">cargar.py</text><rect x="262" y="20" width="104" height="46" rx="5" fill="#ffffff" stroke="#2a78d6" stroke-width="1.5"/><text x="314.0" y="39.0" text-anchor="middle" font-size="11" font-weight="600" fill="#1d1d1b">Vistas SQL</text><text x="314.0" y="53.0" text-anchor="middle" font-size="9.5" fill="#52514e">capa/modelos</text><rect x="390" y="20" width="112" height="46" rx="5" fill="#ffffff" stroke="#eb6834" stroke-width="2"/><text x="446.0" y="39.0" text-anchor="middle" font-size="11" font-weight="600" fill="#1d1d1b">metricas.yml</text><text x="446.0" y="53.0" text-anchor="middle" font-size="9.5" fill="#52514e">23 definiciones</text><line x1="110" y1="43" x2="132" y2="43" stroke="#52514e" stroke-width="1.3" marker-end="url(#punta)"/><line x1="238" y1="43" x2="260" y2="43" stroke="#52514e" stroke-width="1.3" marker-end="url(#punta)"/><line x1="366" y1="43" x2="388" y2="43" stroke="#52514e" stroke-width="1.3" marker-end="url(#punta)"/><rect x="534" y="20" width="120" height="46" rx="5" fill="#ffffff" stroke="#bdbcb6" stroke-width="1.5"/><text x="594.0" y="39.0" text-anchor="middle" font-size="11" font-weight="600" fill="#1d1d1b">Tablero / analista</text><text x="594.0" y="53.0" text-anchor="middle" font-size="9.5" fill="#52514e">mismo diccionario</text><line x1="502" y1="43" x2="532" y2="43" stroke="#52514e" stroke-width="1.3" marker-end="url(#punta)"/><rect x="390" y="112" width="112" height="46" rx="5" fill="#ffffff" stroke="#2a78d6" stroke-width="1.5"/><text x="446.0" y="131.0" text-anchor="middle" font-size="11" font-weight="600" fill="#1d1d1b">motor.py</text><text x="446.0" y="145.0" text-anchor="middle" font-size="9.5" fill="#52514e">solo lectura</text><line x1="446" y1="66" x2="446" y2="110" stroke="#52514e" stroke-width="1.3" marker-end="url(#punta)"/><line x1="330" y1="66" x2="412" y2="110" stroke="#52514e" stroke-width="1.3" marker-end="url(#punta)"/><rect x="534" y="112" width="120" height="46" rx="5" fill="#ffffff" stroke="#bdbcb6" stroke-width="1.5"/><text x="594.0" y="131.0" text-anchor="middle" font-size="11" font-weight="600" fill="#1d1d1b">Pruebas</text><text x="594.0" y="145.0" text-anchor="middle" font-size="9.5" fill="#52514e">107, contra pandas</text><line x1="532" y1="135" x2="504" y2="135" stroke="#52514e" stroke-width="1.3" stroke-dasharray="4 3" marker-end="url(#punta)"/><rect x="390" y="194" width="112" height="46" rx="5" fill="#ffffff" stroke="#2a78d6" stroke-width="1.5"/><text x="446.0" y="213.0" text-anchor="middle" font-size="11" font-weight="600" fill="#1d1d1b">servidor_mcp.py</text><text x="446.0" y="227.0" text-anchor="middle" font-size="9.5" fill="#52514e">6 herramientas</text><line x1="446" y1="158" x2="446" y2="192" stroke="#52514e" stroke-width="1.3" marker-end="url(#punta)"/><rect x="180" y="194" width="150" height="46" rx="5" fill="#ffffff" stroke="#1d1d1b" stroke-width="2"/><text x="255.0" y="213.0" text-anchor="middle" font-size="11" font-weight="600" fill="#1d1d1b">Claude Code</text><text x="255.0" y="227.0" text-anchor="middle" font-size="9.5" fill="#52514e">+ CLAUDE.md (reglas)</text><line x1="388" y1="217" x2="332" y2="217" stroke="#52514e" stroke-width="1.3" marker-end="url(#punta)" marker-start="url(#punta)"/><rect x="6" y="194" width="120" height="46" rx="5" fill="#ffffff" stroke="#bdbcb6" stroke-width="1.5"/><text x="66.0" y="213.0" text-anchor="middle" font-size="11" font-weight="600" fill="#1d1d1b">Persona</text><text x="66.0" y="227.0" text-anchor="middle" font-size="9.5" fill="#52514e">pregunta en español</text><line x1="178" y1="217" x2="128" y2="217" stroke="#52514e" stroke-width="1.3" marker-end="url(#punta)" marker-start="url(#punta)"/><text x="14" y="112" font-size="9.5" fill="#52514e">La respuesta trae el número, la definición</text><text x="14" y="126" font-size="9.5" fill="#52514e">usada, los criterios de lectura y el SQL</text><text x="14" y="140" font-size="9.5" fill="#52514e">ejecutado. Claude Code no calcula cifras</text><text x="14" y="154" font-size="9.5" fill="#52514e">oficiales: se las pide al servidor.</text></svg></figure>
+
+  <h3>Las piezas, una por una</h3>
+  <p><b>1. Carga</b> (<code>datos/cargar.py</code>). Descomprime los archivos de Kaggle, crea una tabla por
+  CSV en <code>datos/olist.duckdb</code> y compara el número de filas de cada tabla con el de su archivo.
+  Los archivos bajados se tratan como no confiables: se leen, nunca se ejecutan.</p>
+
+  <p><b>2. Vistas SQL</b> (<code>capa/modelos/</code>, cinco archivos). Limpian y dan forma a los datos una
+  sola vez:</p>
+  <table>
+    <tr><th>Vista</th><th>Un renglón es</th><th>Qué resuelve</th></tr>
+    <tr><td><code>v_pedidos</code></td><td>un pedido válido</td><td>Excluye cancelados y no disponibles. Promedia las reseñas de cada pedido para no duplicarlo. Marca si llegó tarde.</td></tr>
+    <tr><td><code>v_items</code></td><td>un producto vendido</td><td>Es la base del GMV. Le pega el estado del vendedor, la categoría y el tipo de lead. Nunca toca pagos.</td></tr>
+    <tr><td><code>v_gmv_vendedor_mes</code></td><td>un vendedor en un mes</td><td>GMV y pedidos de cada vendedor por mes. Base de la retención y las cohortes.</td></tr>
+    <tr><td><code>v_mov</code></td><td>un vendedor en un mes con cambio</td><td>Compara a cada vendedor con su mes anterior y lo clasifica: nuevo, expansión, contracción, baja o reactivación.</td></tr>
+    <tr><td><code>v_leads</code></td><td>un lead</td><td>Mes de entrada, origen y si terminó cerrando.</td></tr>
+    <tr><td><code>v_cierres</code></td><td>un negocio cerrado</td><td>Días hasta el cierre, primera venta, GMV en 90 días y si ya tiene 90 días de observación.</td></tr>
+    <tr><td><code>v_cohortes</code></td><td>un vendedor en cada mes desde su primera venta</td><td>Si siguió vendiendo 1, 2, 3… meses después.</td></tr>
+  </table>
+
+  <p><b>3. Diccionario</b> (<code>capa/metricas.yml</code>). Es la fuente única. Cada métrica dice qué mide en
+  lenguaje de negocio, cómo se calcula, quién es su dueño, por qué columnas se puede abrir, cuál es su muestra
+  mínima, qué trampas tiene, con qué se suele confundir, cómo se llamaría en SaaS y, si aplica, cuándo debe
+  disparar una alerta. Así se ve una completa:</p>
+  
+<div class="ficha">
+  <div class="ficha-cab"><code>tasa_activacion_90d</code> · Activación a 90 días</div>
+  <dl>
+    <dt>Definición</dt><dd>De cada 100 negocios cerrados, cuántos hicieron al menos una venta en sus primeros 90 días.</dd>
+    <dt>Fórmula</dt><dd>cierres con venta en 90 días / cierres con 90 días de observación</dd>
+    <dt>Dueño</dt><dd>Product</dd>
+    <dt>Vista y filtro</dt><dd><code>v_cierres</code>, solo filas con <code>observable_90d</code></dd>
+    <dt>Muestra mínima</dt><dd>30 cierres. Por debajo, el resultado sale con <code>fiable: false</code></dd>
+    <dt>Se puede abrir por</dt><dd>origen, segmento, tipo_lead, tipo_negocio, sdr_id, sr_id</dd>
+    <dt>Criterios de lectura</dt><dd><ul><li>Solo entran cierres con 90 días completos de observación (cerrados hasta inicios de junio de 2018). Los pedidos terminan el 31 de agosto de 2018.</li><li>Sin esta ventana, los cierres recientes parecen activarse menos solo porque han tenido menos tiempo. Es un sesgo de censura, no una caída real.</li><li>Con menos de 30 cierres en el grupo, la tasa no es fiable.</li></ul></dd>
+    <dt>No confundir con</dt><dd><code>tasa_cierre</code></dd>
+    <dt>Equivalente en SaaS</dt><dd>Conversión de prueba a pago, o activación</dd>
+    <dt>Alerta</dt><dd>si cae por debajo de su línea base dividida entre 1,25 y la caída es de al menos 8 puntos</dd>
+  </dl>
+</div>
+</section>
+
+<section>
+  <p><b>4. Motor</b> (<code>capa/motor.py</code>). Recibe un pedido ("activación a 90 días, por tipo de lead") y:</p>
+  <ul>
+    <li>revisa que la métrica exista y que se pueda abrir por esas columnas (si no, explica por qué);</li>
+    <li>arma el SQL desde el diccionario, con los filtros como parámetros y nunca pegados al texto;</li>
+    <li>marca cada fila como fiable o no según su muestra, y si está fuera de la ventana válida;</li>
+    <li>devuelve el número, la definición, los criterios de lectura y el SQL que usó, para que se pueda auditar.</li>
+  </ul>
+  <p>La base se abre en <b>solo lectura</b> y sin acceso a archivos externos. El motor también descompone
+  cambios y detecta anomalías (ver abajo).</p>
+
+  <p><b>5. Servidor MCP</b> (<code>servidor_mcp.py</code>). MCP es el estándar abierto con el que un asistente
+  de IA usa herramientas externas. El servidor le da a Claude Code seis:</p>
+  <table>
+    <tr><th>Herramienta</th><th>Para qué sirve</th></tr>
+    <tr><td><code>listar_metricas</code></td><td>Ver qué métricas existen, con su definición corta.</td></tr>
+    <tr><td><code>definir_metrica</code></td><td>Leer la definición completa de una antes de usarla.</td></tr>
+    <tr><td><code>consultar_metrica</code></td><td>Calcularla por mes y por segmento. <b>Es la única fuente válida de cifras.</b></td></tr>
+    <tr><td><code>descomponer_cambio</code></td><td>Explicar por qué cambió entre dos meses, segmento por segmento. En métricas que se suman (GMV), dice qué parte del cambio aporta cada segmento; en tasas, en cuáles cambió más y con cuánta muestra.</td></tr>
+    <tr><td><code>detectar_anomalias</code></td><td>Revisar un mes contra la mediana de sus seis meses anteriores. Alerta solo si el desvío es grande en proporción <b>y</b> en tamaño, para no hacer ruido.</td></tr>
+    <tr><td><code>sql_exploratorio</code></td><td>Mirar un detalle con SQL libre. Solo consultas de lectura, con tope de 500 filas, y la respuesta avisa que no es cifra oficial.</td></tr>
+  </table>
+  <p>La regla de anomalías (mediana como línea base, desvío relativo y mínimo absoluto a la vez) se adaptó de
+  las alertas de desempeño que Julián usa en su trabajo actual, pasada de días a meses.</p>
+
+  <p><b>6. Reglas del agente</b> (instrucciones del servidor). Viajan con el servidor, así que las recibe cualquier asistente que se conecte, no solo Claude Code. Cada respuesta dice además con qué versión del diccionario se calculó (versión y huella). Las principales:</p>
+  <ul>
+    <li>Toda cifra sale de <code>consultar_metrica</code>. Nada de recalcular a mano.</li>
+    <li>Decir en una línea qué definición se usó y qué criterios de lectura afectan la respuesta.</li>
+    <li>Si una fila no es fiable, decirlo y no sacar conclusiones de ella.</li>
+    <li>Para un "¿por qué cambió?", descomponer por más de una dimensión antes de concluir.</li>
+    <li>Terminar con una recomendación concreta y cómo medir si funcionó.</li>
+    <li>Si piden MRR, ARR, CAC o LTV, decir que estos datos no los tienen.</li>
+  </ul>
+
+  <h3>Cómo responde una pregunta</h3>
+  <p>El recorrido que piden las reglas, con la pregunta de la primera prueba real:</p>
+  <div class="caja">
+    <p><b>"Los negocios que cerramos, ¿de verdad terminan vendiendo? ¿A qué tipo de lead le debería dedicar más
+    tiempo el equipo de ventas?"</b></p>
+    <ol>
+      <li>Busca la métrica que aplica: <code>tasa_activacion_90d</code> y <code>gmv_por_cierre_90d</code>.</li>
+      <li>Lee su definición y sus trampas: la ventana de 90 días y la muestra mínima de 30 cierres.</li>
+      <li>Las consulta abiertas por tipo de lead.</li>
+      <li>Responde con la definición usada, la tabla, los segmentos no fiables señalados, una recomendación y
+      cómo medirla.</li>
+    </ol>
+  </div>
+  <p>Esa prueba se corrió con <code>claude -p</code> conectado al servidor. Respondió en 49 segundos y sus
+  cifras coinciden con las del motor.</p>
+</section>
+
+<!-- ======================================================================= MÉTRICAS -->
+<section>
+  <h2><span class="num">4</span>Las 23 métricas</h2>
+  <p>Agrupadas como las pide el aviso de Alegra: embudo, activación, ingresos, movimientos, retención y calidad.
+  La columna de la derecha dice cómo se llamaría cada una con datos de suscripción. Esta tabla se genera
+  directamente del diccionario.</p>
+  <table class="metricas">
+    <tr><th>Grupo</th><th>Métrica</th><th>Qué mide</th><th>Dueño</th><th>En SaaS</th></tr>
+    <tr><td class="grupo">Embudo</td><td><b>Leads calificados</b><br><code>leads</code></td><td>Negocios que pidieron contacto para vender en la plataforma, contados en el mes de su primer contacto.</td><td>Growth</td><td>Leads calificados (MQL)</td></tr>
+<tr><td class="grupo"></td><td><b>Tasa de cierre</b><br><code>tasa_cierre</code></td><td>De cada 100 leads que entraron en un mes, cuántos terminaron cerrando negocio (en cualquier fecha posterior).</td><td>Sales</td><td>Conversión de lead a cliente</td></tr>
+<tr><td class="grupo"></td><td><b>Negocios cerrados</b><br><code>cierres</code></td><td>Vendedores que firmaron con la plataforma, contados en el mes del cierre.</td><td>Sales</td><td>Clientes nuevos</td></tr>
+<tr><td class="grupo"></td><td><b>Días hasta el cierre</b><br><code>dias_a_cierre</code></td><td>Tiempo típico entre el primer contacto del lead y el cierre del negocio.</td><td>Sales</td><td>Ciclo de venta</td></tr>
+<tr><td class="grupo">Activación</td><td><b>Activación a 90 días</b><br><code>tasa_activacion_90d</code></td><td>De cada 100 negocios cerrados, cuántos hicieron al menos una venta en sus primeros 90 días.</td><td>Product</td><td>Conversión de prueba a pago, o activación</td></tr>
+<tr><td class="grupo"></td><td><b>GMV por cierre a 90 días</b><br><code>gmv_por_cierre_90d</code></td><td>Cuánto vende en promedio un negocio cerrado en sus primeros 90 días, contando también a los que no vendieron nada.</td><td>Growth</td><td>Ingreso de los primeros 90 días por cliente nuevo</td></tr>
+<tr><td class="grupo"></td><td><b>Días hasta la primera venta</b><br><code>dias_a_primera_venta</code></td><td>Tiempo típico entre el cierre del negocio y la primera venta del vendedor.</td><td>Product</td><td>Tiempo hasta el primer valor</td></tr>
+<tr><td class="grupo">Ingresos</td><td><b>GMV</b><br><code>gmv</code></td><td>Valor de los productos vendidos por los vendedores en pedidos válidos, en el mes de la compra.</td><td>Finance</td><td>MRR. No es lo mismo. El GMV no es recurrente ni contratado.</td></tr>
+<tr><td class="grupo"></td><td><b>Pedidos</b><br><code>pedidos</code></td><td>Pedidos válidos con al menos un ítem, en el mes de la compra.</td><td>Operaciones</td><td>Transacciones</td></tr>
+<tr><td class="grupo"></td><td><b>Ticket promedio</b><br><code>ticket_promedio</code></td><td>Valor promedio de un pedido válido, sin flete.</td><td>Finance</td><td>Valor promedio por transacción</td></tr>
+<tr><td class="grupo"></td><td><b>Vendedores activos</b><br><code>vendedores_activos</code></td><td>Vendedores con al menos una venta válida en el mes.</td><td>Growth</td><td>Clientes activos</td></tr>
+<tr><td class="grupo"></td><td><b>GMV por vendedor activo</b><br><code>gmv_por_vendedor</code></td><td>Cuánto vende en promedio un vendedor activo en el mes.</td><td>Finance</td><td>ARPA (ingreso promedio por cuenta)</td></tr>
+<tr><td class="grupo">Movimientos de GMV</td><td><b>GMV nuevo</b><br><code>gmv_nuevo</code></td><td>GMV de vendedores que venden por primera vez este mes.</td><td>Growth</td><td>MRR nuevo</td></tr>
+<tr><td class="grupo"></td><td><b>GMV de expansión</b><br><code>gmv_expansion</code></td><td>Aumento de GMV de vendedores que ya vendían el mes anterior y este mes vendieron más.</td><td>Growth</td><td>MRR de expansión</td></tr>
+<tr><td class="grupo"></td><td><b>GMV de reactivación</b><br><code>gmv_reactivacion</code></td><td>GMV de vendedores que no vendieron el mes anterior pero ya habían vendido antes.</td><td>Growth</td><td>MRR de reactivación</td></tr>
+<tr><td class="grupo"></td><td><b>GMV de contracción</b><br><code>gmv_contraccion</code></td><td>Caída de GMV de vendedores que siguieron vendiendo pero vendieron menos que el mes anterior.</td><td>Growth</td><td>MRR de contracción</td></tr>
+<tr><td class="grupo"></td><td><b>GMV perdido por bajas</b><br><code>gmv_baja</code></td><td>GMV que tenían el mes anterior los vendedores que este mes no vendieron nada.</td><td>Growth</td><td>MRR perdido por churn</td></tr>
+<tr><td class="grupo">Retención</td><td><b>Churn mensual de vendedores</b><br><code>churn_vendedores</code></td><td>De cada 100 vendedores que vendieron el mes anterior, cuántos no vendieron nada este mes.</td><td>Growth</td><td>Churn de logos</td></tr>
+<tr><td class="grupo"></td><td><b>Retención neta de GMV</b><br><code>retencion_neta</code></td><td>Por cada 100 reales que vendían el mes anterior los vendedores ya activos, cuánto venden esos mismos vendedores este mes.</td><td>Finance</td><td>NRR (retención neta de ingresos)</td></tr>
+<tr><td class="grupo"></td><td><b>Retención bruta de GMV</b><br><code>retencion_bruta</code></td><td>Igual que la retención neta, pero sin contar lo que crecieron los vendedores. Nunca pasa de 100.</td><td>Finance</td><td>GRR (retención bruta de ingresos)</td></tr>
+<tr><td class="grupo"></td><td><b>Retención por cohorte</b><br><code>retencion_cohorte</code></td><td>De cada 100 vendedores que hicieron su primera venta en un mes, cuántos venden N meses después.</td><td>Growth</td><td>Retención de logos por cohorte</td></tr>
+<tr><td class="grupo">Calidad</td><td><b>Entregas tardías</b><br><code>entregas_tardias</code></td><td>De cada 100 pedidos entregados, cuántos llegaron después de la fecha prometida al cliente.</td><td>Operaciones</td><td>Incidentes de servicio</td></tr>
+<tr><td class="grupo"></td><td><b>Nota de reseñas</b><br><code>nota_resenas</code></td><td>Calificación promedio de 1 a 5 que dieron los clientes a sus pedidos.</td><td>Operaciones</td><td>Satisfacción (CSAT o NPS)</td></tr>
+  </table>
+</section>
+
+<!-- ======================================================================= PRUEBAS -->
+<section>
+  <h2><span class="num">5</span>Cómo se comprobó</h2>
+  <p>Que el código corra no dice que las cifras estén bien. Por eso cada cifra se comprueba contra un cálculo
+  hecho por otro camino, no contra el resultado del propio motor.</p>
+  <table>
+    <tr><th>Prueba</th><th>Qué demuestra</th><th>Resultado</th></tr>
+    <tr><td>Carga</td><td>Cada tabla tiene las mismas filas que su CSV.</td><td>11 de 11</td></tr>
+    <tr><td>Recalculo independiente</td><td>Las métricas del motor coinciden con un cálculo aparte en pandas, leyendo los CSV crudos.</td><td rowspan="5"><b>107 pruebas en verde</b> (pytest, unos 2 minutos)</td></tr>
+    <tr><td>Conciliación de movimientos</td><td>En cada mes, GMV anterior + nuevo + expansión + reactivación − contracción − bajas = GMV del mes.</td></tr>
+    <tr><td>Trampas</td><td>Unir con pagos infla el GMV 4,5 % (se comprueba el número), los cancelados no entran y la censura está controlada.</td></tr>
+    <tr><td>Seguridad del SQL libre</td><td>Se rechazan escrituras, borrados, varias sentencias, lectura de archivos y filtros con SQL escondido.</td></tr>
+    <tr><td>Muestra y descomposición</td><td>Los segmentos pequeños salen como no fiables. Los aportes al cambio suman 100 %.</td></tr>
+    <tr><td>Mutación</td><td>Se quitó a propósito la exclusión de pedidos "no disponibles" para ver si las pruebas lo notaban.</td><td>12 pruebas fallaron. Se restauró.</td></tr>
+    <tr><td>Servidor como cliente real</td><td><code>pruebas/probar_servidor.py</code> llama las seis herramientas, incluida una métrica que no existe (<code>mrr</code>) y un <code>DROP TABLE</code>.</td><td>Las seis responden. Las dos llamadas malas se rechazan con un mensaje útil.</td></tr>
+    <tr><td>De punta a punta</td><td>Una pregunta de negocio hecha a Claude Code con el servidor conectado.</td><td>Respuesta correcta en 49 s.</td></tr>
+  </table>
+  <div class="caja alerta">
+    <p><b>Pendiente:</b> preguntas de control hechas a Claude Code con la capa y sin ella (solo con SQL libre
+    sobre las tablas crudas), para medir si la capa cambia la exactitud de las respuestas. Se reportará lo que
+    salga. Si sin la capa acierta igual, el argumento pasa a ser consistencia y trazabilidad, no exactitud.</p>
+  </div>
+
+  <h3>Decisiones de diseño y por qué</h3>
+  <table>
+    <tr><th>Decisión</th><th>Por qué</th></tr>
+    <tr><td>DuckDB local</td><td>No necesita servidor, lee los CSV directo y usa SQL casi estándar. Las vistas se pueden llevar a un warehouse con pocos cambios.</td></tr>
+    <tr><td>Diccionario en YAML</td><td>Se lee como texto, se revisa en git y lo pueden leer una persona, el motor y el agente.</td></tr>
+    <tr><td>MCP en vez de SQL libre</td><td>El agente solo puede pedir métricas que existen y abrirlas por columnas permitidas. No puede inventar una definición.</td></tr>
+    <tr><td>Mediana como línea base</td><td>Un mes raro, como noviembre de 2017, no mueve la base de los meses siguientes.</td></tr>
+    <tr><td>Alerta con dos condiciones</td><td>Un cambio grande en porcentaje pero chico en tamaño no genera ruido.</td></tr>
+    <tr><td>Muestra mínima por métrica</td><td>No es igual leer un promedio de 100 pedidos que una tasa sobre 30 cierres. Cada métrica fija la suya.</td></tr>
+    <tr><td>El SQL va con la respuesta</td><td>Cualquiera puede ver qué se contó y reproducir el número.</td></tr>
+  </table>
+</section>
+
+<!-- ======================================================================= HALLAZGOS -->
+<section>
+  <h2><span class="num">6</span>Lo que muestran los datos</h2>
+  <p>Todo sale de los datos reales. Nada se sembró: los hallazgos aparecieron en la exploración y cada cifra
+  se reproduce con el motor.</p>
+
+  <div class="hallazgo">
+  <h3>1. Menos de la mitad de los cierres termina vendiendo</h3>
+  <p>De 667 cierres con 90 días de observación, <b>43,3 % hizo al menos una venta</b> en ese plazo.
+  En promedio, cada cierre vendió 510 BRL en sus primeros 90 días, contando a los que no vendieron.
+  El tipo de lead marca mucha diferencia:</p>
+  <figure>
+    <figcaption>Activación a 90 días por tipo de lead
+      <span>Porcentaje de cierres con al menos una venta en 90 días. A la derecha, cierres y GMV por cierre en 90 días.</span></figcaption>
+    <svg viewBox="0 0 660 210" role="img" aria-label="Activación a 90 días por tipo de lead">
+<text x="140" y="20.5" text-anchor="end" class="cat">online_big</text>
+<path d="M150,9.5 L364.0,9.5 Q367.0,9.5 367.0,12.5 L367.0,20.5 Q367.0,23.5 364.0,23.5 L150,23.5 Z" fill="#2a78d6"><title>online_big: 62,0 %</title></path>
+<text x="373.0" y="20.5" class="valor">62,0 %</text>
+<text x="656" y="20.5" text-anchor="end" class="nota">100 cierres · 1.605 BRL por cierre</text>
+<text x="140" y="45.5" text-anchor="end" class="cat">online_medium</text>
+<path d="M150,34.5 L310.3,34.5 Q313.3,34.5 313.3,37.5 L313.3,45.5 Q313.3,48.5 310.3,48.5 L150,48.5 Z" fill="#2a78d6"><title>online_medium: 46,7 %</title></path>
+<text x="319.3" y="45.5" class="valor">46,7 %</text>
+<text x="656" y="45.5" text-anchor="end" class="nota">270 cierres · 343 BRL por cierre</text>
+<text x="140" y="70.5" text-anchor="end" class="cat">online_small</text>
+<path d="M150,59.5 L280.4,59.5 Q283.4,59.5 283.4,62.5 L283.4,70.5 Q283.4,73.5 280.4,73.5 L150,73.5 Z" fill="#2a78d6"><title>online_small: 38,1 %</title></path>
+<text x="289.4" y="70.5" class="valor">38,1 %</text>
+<text x="656" y="70.5" text-anchor="end" class="nota">63 cierres · 326 BRL por cierre</text>
+<text x="140" y="95.5" text-anchor="end" class="cat">online_beginner</text>
+<path d="M150,84.5 L277.2,84.5 Q280.2,84.5 280.2,87.5 L280.2,95.5 Q280.2,98.5 277.2,98.5 L150,98.5 Z" fill="#2a78d6"><title>online_beginner: 37,2 %</title></path>
+<text x="286.2" y="95.5" class="valor">37,2 %</text>
+<text x="656" y="95.5" text-anchor="end" class="nota">43 cierres · 276 BRL por cierre</text>
+<text x="140" y="120.5" text-anchor="end" class="cat">industry</text>
+<path d="M150,109.5 L268.7,109.5 Q271.7,109.5 271.7,112.5 L271.7,120.5 Q271.7,123.5 268.7,123.5 L150,123.5 Z" fill="#2a78d6"><title>industry: 34,8 %</title></path>
+<text x="277.7" y="120.5" class="valor">34,8 %</text>
+<text x="656" y="120.5" text-anchor="end" class="nota">92 cierres · 176 BRL por cierre</text>
+<text x="140" y="145.5" text-anchor="end" class="cat">offline</text>
+<path d="M150,134.5 L235.6,134.5 Q238.6,134.5 238.6,137.5 L238.6,145.5 Q238.6,148.5 235.6,148.5 L150,148.5 Z" fill="#2a78d6"><title>offline: 25,3 %</title></path>
+<text x="244.6" y="145.5" class="valor">25,3 %</text>
+<text x="656" y="145.5" text-anchor="end" class="nota">83 cierres · 88 BRL por cierre</text>
+<text x="140" y="170.5" text-anchor="end" class="cat">sin_dato</text>
+<path d="M150,159.5 L409.5,159.5 Q412.5,159.5 412.5,162.5 L412.5,170.5 Q412.5,173.5 409.5,173.5 L150,173.5 Z" fill="#bdbcb6"><title>sin_dato: 75,0 %</title></path>
+<text x="418.5" y="170.5" class="valor">75,0 %</text>
+<text x="656" y="170.5" text-anchor="end" class="nota">4 cierres · no fiable</text>
+<text x="140" y="195.5" text-anchor="end" class="cat">online_top</text>
+<path d="M150,184.5 L292.8,184.5 Q295.8,184.5 295.8,187.5 L295.8,195.5 Q295.8,198.5 292.8,198.5 L150,198.5 Z" fill="#bdbcb6"><title>online_top: 41,7 %</title></path>
+<text x="301.8" y="195.5" class="valor">41,7 %</text>
+<text x="656" y="195.5" text-anchor="end" class="nota">12 cierres · no fiable</text>
+<line x1="150" x2="150" y1="4" y2="206" stroke="#52514e" stroke-width="1"/>
+</svg>
+    <div class="fuente">En gris, segmentos con menos de 30 cierres: el motor los marca como no fiables.</div>
+  </figure>
+  <p>Por tipo de negocio: revendedor 48,8 % y 671 BRL por cierre (459 cierres); fabricante
+  31,7 % y 161 BRL (199). Por origen: búsqueda pagada 54,8 % y búsqueda orgánica 38,9 %.
+  <b>Límite:</b> el tipo de lead solo existe en los negocios cerrados. Se sabe que unos venden más una vez
+  cerrados, no si cierran más.</p>
+  </div>
+
+  <div class="hallazgo">
+  <h3>2. La tasa de cierre depende mucho del origen</h3>
+  <figure>
+    <figcaption>Tasa de cierre por origen del lead
+      <span>Leads que entraron de enero a mayo de 2018, la única ventana válida. Tasa total: 13,0 %.</span></figcaption>
+    <svg viewBox="0 0 660 285" role="img" aria-label="Tasa de cierre por origen del lead, leads de enero a mayo de 2018">
+<text x="140" y="20.5" text-anchor="end" class="cat">unknown</text>
+<path d="M150,9.5 L360.5,9.5 Q363.5,9.5 363.5,12.5 L363.5,20.5 Q363.5,23.5 360.5,23.5 L150,23.5 Z" fill="#2a78d6"><title>unknown: 20,7 %</title></path>
+<text x="369.5" y="20.5" class="valor">20,7 %</text>
+<text x="656" y="20.5" text-anchor="end" class="nota">813 leads</text>
+<text x="140" y="45.5" text-anchor="end" class="cat">paid_search</text>
+<path d="M150,34.5 L300.0,34.5 Q303.0,34.5 303.0,37.5 L303.0,45.5 Q303.0,48.5 300.0,48.5 L150,48.5 Z" fill="#2a78d6"><title>paid_search: 14,8 %</title></path>
+<text x="309.0" y="45.5" class="valor">14,8 %</text>
+<text x="656" y="45.5" text-anchor="end" class="nota">1.182 leads</text>
+<text x="140" y="70.5" text-anchor="end" class="cat">organic_search</text>
+<path d="M150,59.5 L298.8,59.5 Q301.8,59.5 301.8,62.5 L301.8,70.5 Q301.8,73.5 298.8,73.5 L150,73.5 Z" fill="#2a78d6"><title>organic_search: 14,7 %</title></path>
+<text x="307.8" y="70.5" class="valor">14,7 %</text>
+<text x="656" y="70.5" text-anchor="end" class="nota">1.736 leads</text>
+<text x="140" y="95.5" text-anchor="end" class="cat">direct_traffic</text>
+<path d="M150,84.5 L293.8,84.5 Q296.8,84.5 296.8,87.5 L296.8,95.5 Q296.8,98.5 293.8,98.5 L150,98.5 Z" fill="#2a78d6"><title>direct_traffic: 14,2 %</title></path>
+<text x="302.8" y="95.5" class="valor">14,2 %</text>
+<text x="656" y="95.5" text-anchor="end" class="nota">380 leads</text>
+<text x="140" y="120.5" text-anchor="end" class="cat">referral</text>
+<path d="M150,109.5 L264.5,109.5 Q267.5,109.5 267.5,112.5 L267.5,120.5 Q267.5,123.5 264.5,123.5 L150,123.5 Z" fill="#2a78d6"><title>referral: 11,4 %</title></path>
+<text x="273.5" y="120.5" class="valor">11,4 %</text>
+<text x="656" y="120.5" text-anchor="end" class="nota">211 leads</text>
+<text x="140" y="145.5" text-anchor="end" class="cat">display</text>
+<path d="M150,134.5 L215.9,134.5 Q218.9,134.5 218.9,137.5 L218.9,145.5 Q218.9,148.5 215.9,148.5 L150,148.5 Z" fill="#2a78d6"><title>display: 6,7 %</title></path>
+<text x="224.9" y="145.5" class="valor">6,7 %</text>
+<text x="656" y="145.5" text-anchor="end" class="nota">75 leads</text>
+<text x="140" y="170.5" text-anchor="end" class="cat">social</text>
+<path d="M150,159.5 L211.9,159.5 Q214.9,159.5 214.9,162.5 L214.9,170.5 Q214.9,173.5 211.9,173.5 L150,173.5 Z" fill="#2a78d6"><title>social: 6,3 %</title></path>
+<text x="220.9" y="170.5" class="valor">6,3 %</text>
+<text x="656" y="170.5" text-anchor="end" class="nota">1.051 leads</text>
+<text x="140" y="195.5" text-anchor="end" class="cat">email</text>
+<path d="M150,184.5 L188.6,184.5 Q191.6,184.5 191.6,187.5 L191.6,195.5 Q191.6,198.5 188.6,198.5 L150,198.5 Z" fill="#2a78d6"><title>email: 4,0 %</title></path>
+<text x="197.6" y="195.5" class="valor">4,0 %</text>
+<text x="656" y="195.5" text-anchor="end" class="nota">347 leads</text>
+<text x="140" y="220.5" text-anchor="end" class="cat">other</text>
+<path d="M150,209.5 L183.3,209.5 Q186.3,209.5 186.3,212.5 L186.3,220.5 Q186.3,223.5 183.3,223.5 L150,223.5 Z" fill="#2a78d6"><title>other: 3,5 %</title></path>
+<text x="192.3" y="220.5" class="valor">3,5 %</text>
+<text x="656" y="220.5" text-anchor="end" class="nota">114 leads</text>
+<text x="140" y="245.5" text-anchor="end" class="cat">sin_dato</text>
+<path d="M150,234.5 L426.8,234.5 Q429.8,234.5 429.8,237.5 L429.8,245.5 Q429.8,248.5 426.8,248.5 L150,248.5 Z" fill="#bdbcb6"><title>sin_dato: 27,1 %</title></path>
+<text x="435.8" y="245.5" class="valor">27,1 %</text>
+<text x="656" y="245.5" text-anchor="end" class="nota">48 leads · no fiable</text>
+<text x="140" y="270.5" text-anchor="end" class="cat">other_publicities</text>
+<path d="M150,259.5 L222.6,259.5 Q225.6,259.5 225.6,262.5 L225.6,270.5 Q225.6,273.5 222.6,273.5 L150,273.5 Z" fill="#bdbcb6"><title>other_publicities: 7,3 %</title></path>
+<text x="231.6" y="270.5" class="valor">7,3 %</text>
+<text x="656" y="270.5" text-anchor="end" class="nota">41 leads · no fiable</text>
+<line x1="150" x2="150" y1="4" y2="281" stroke="#52514e" stroke-width="1"/>
+</svg>
+    <div class="fuente">En gris, grupos con menos de 50 leads: el motor los marca como no fiables.</div>
+  </figure>
+  <p>Búsqueda orgánica, búsqueda pagada y tráfico directo cierran cerca de 14 a 15 %; redes sociales y correo,
+  entre 4 % y 6 %. El grupo "unknown" cierra 20,7 %, pero no se sabe qué canal es. En mayo de 2018 la tasa total bajó a 10,0 % frente a una base de 13,9 %.
+  Es una alerta real del motor.</p>
+  </div>
+
+  <div class="hallazgo">
+  <h3>3. Noviembre de 2017 se sale de lo normal</h3>
+  <figure>
+    <figcaption>GMV mensual (BRL)
+      <span>Venta de los vendedores en pedidos válidos, sin flete. Meses completos.</span></figcaption>
+    <svg viewBox="0 0 660 220" role="img" aria-label="GMV mensual en BRL, enero de 2017 a agosto de 2018">
+<line x1="52" x2="654" y1="186.0" y2="186.0" stroke="#e4e3de" stroke-width="1"/>
+<text x="44" y="189.5" text-anchor="end" class="eje">0</text>
+<line x1="52" x2="654" y1="152.8" y2="152.8" stroke="#e4e3de" stroke-width="1"/>
+<text x="44" y="156.3" text-anchor="end" class="eje">250 mil</text>
+<line x1="52" x2="654" y1="119.6" y2="119.6" stroke="#e4e3de" stroke-width="1"/>
+<text x="44" y="123.1" text-anchor="end" class="eje">500 mil</text>
+<line x1="52" x2="654" y1="86.4" y2="86.4" stroke="#e4e3de" stroke-width="1"/>
+<text x="44" y="89.9" text-anchor="end" class="eje">750 mil</text>
+<line x1="52" x2="654" y1="53.2" y2="53.2" stroke="#e4e3de" stroke-width="1"/>
+<text x="44" y="56.7" text-anchor="end" class="eje">1,00 M</text>
+<line x1="52" x2="654" y1="20.0" y2="20.0" stroke="#e4e3de" stroke-width="1"/>
+<text x="44" y="23.5" text-anchor="end" class="eje">1,25 M</text>
+<path d="M57.1,186.0 L57.1,173.1 Q57.1,170.1 60.1,170.1 L74.0,170.1 Q77.0,170.1 77.0,173.1 L77.0,186.0 Z" fill="#2a78d6"><title>2017-01: 120 mil</title></path>
+<text x="67.0" y="165.1" text-anchor="middle" class="valor">120 mil</text>
+<text x="67.0" y="199" text-anchor="middle" class="eje">ene</text>
+<text x="67.0" y="212" text-anchor="middle" class="eje anio">2017</text>
+<path d="M87.2,186.0 L87.2,156.5 Q87.2,153.5 90.2,153.5 L104.1,153.5 Q107.1,153.5 107.1,156.5 L107.1,186.0 Z" fill="#2a78d6"><title>2017-02: 245 mil</title></path>
+<text x="97.2" y="199" text-anchor="middle" class="eje">feb</text>
+<path d="M117.3,186.0 L117.3,140.1 Q117.3,137.1 120.3,137.1 L134.2,137.1 Q137.2,137.1 137.2,140.1 L137.2,186.0 Z" fill="#2a78d6"><title>2017-03: 368 mil</title></path>
+<text x="127.3" y="199" text-anchor="middle" class="eje">mar</text>
+<path d="M147.4,186.0 L147.4,142.0 Q147.4,139.0 150.4,139.0 L164.3,139.0 Q167.3,139.0 167.3,142.0 L167.3,186.0 Z" fill="#2a78d6"><title>2017-04: 354 mil</title></path>
+<text x="157.3" y="199" text-anchor="middle" class="eje">abr</text>
+<path d="M177.5,186.0 L177.5,122.2 Q177.5,119.2 180.5,119.2 L194.4,119.2 Q197.4,119.2 197.4,122.2 L197.4,186.0 Z" fill="#2a78d6"><title>2017-05: 503 mil</title></path>
+<text x="187.4" y="199" text-anchor="middle" class="eje">may</text>
+<path d="M207.6,186.0 L207.6,131.9 Q207.6,128.9 210.6,128.9 L224.5,128.9 Q227.5,128.9 227.5,131.9 L227.5,186.0 Z" fill="#2a78d6"><title>2017-06: 430 mil</title></path>
+<text x="217.5" y="199" text-anchor="middle" class="eje">jun</text>
+<path d="M237.7,186.0 L237.7,123.6 Q237.7,120.6 240.7,120.6 L254.6,120.6 Q257.6,120.6 257.6,123.6 L257.6,186.0 Z" fill="#2a78d6"><title>2017-07: 492 mil</title></path>
+<text x="247.7" y="199" text-anchor="middle" class="eje">jul</text>
+<path d="M267.8,186.0 L267.8,113.5 Q267.8,110.5 270.8,110.5 L284.7,110.5 Q287.7,110.5 287.7,113.5 L287.7,186.0 Z" fill="#2a78d6"><title>2017-08: 568 mil</title></path>
+<text x="277.8" y="199" text-anchor="middle" class="eje">ago</text>
+<path d="M297.9,186.0 L297.9,106.5 Q297.9,103.5 300.9,103.5 L314.8,103.5 Q317.8,103.5 317.8,106.5 L317.8,186.0 Z" fill="#2a78d6"><title>2017-09: 621 mil</title></path>
+<text x="307.9" y="199" text-anchor="middle" class="eje">sep</text>
+<path d="M328.0,186.0 L328.0,101.3 Q328.0,98.3 331.0,98.3 L344.9,98.3 Q347.9,98.3 347.9,101.3 L347.9,186.0 Z" fill="#2a78d6"><title>2017-10: 660 mil</title></path>
+<text x="338.0" y="199" text-anchor="middle" class="eje">oct</text>
+<path d="M358.1,186.0 L358.1,55.7 Q358.1,52.7 361.1,52.7 L375.0,52.7 Q378.0,52.7 378.0,55.7 L378.0,186.0 Z" fill="#eb6834"><title>2017-11: 1,00 M</title></path>
+<text x="368.1" y="47.7" text-anchor="middle" class="valor">1,00 M</text>
+<text x="368.1" y="199" text-anchor="middle" class="eje">nov</text>
+<path d="M388.2,186.0 L388.2,90.4 Q388.2,87.4 391.2,87.4 L405.1,87.4 Q408.1,87.4 408.1,90.4 L408.1,186.0 Z" fill="#2a78d6"><title>2017-12: 742 mil</title></path>
+<text x="398.2" y="199" text-anchor="middle" class="eje">dic</text>
+<path d="M418.3,186.0 L418.3,63.4 Q418.3,60.4 421.3,60.4 L435.2,60.4 Q438.2,60.4 438.2,63.4 L438.2,186.0 Z" fill="#2a78d6"><title>2018-01: 945 mil</title></path>
+<text x="428.3" y="199" text-anchor="middle" class="eje">ene</text>
+<text x="428.3" y="212" text-anchor="middle" class="eje anio">2018</text>
+<path d="M448.4,186.0 L448.4,77.7 Q448.4,74.7 451.4,74.7 L465.3,74.7 Q468.3,74.7 468.3,77.7 L468.3,186.0 Z" fill="#2a78d6"><title>2018-02: 838 mil</title></path>
+<text x="458.4" y="199" text-anchor="middle" class="eje">feb</text>
+<path d="M478.5,186.0 L478.5,58.7 Q478.5,55.7 481.5,55.7 L495.4,55.7 Q498.4,55.7 498.4,58.7 L498.4,186.0 Z" fill="#2a78d6"><title>2018-03: 981 mil</title></path>
+<text x="488.5" y="199" text-anchor="middle" class="eje">mar</text>
+<path d="M508.6,186.0 L508.6,57.1 Q508.6,54.1 511.6,54.1 L525.5,54.1 Q528.5,54.1 528.5,57.1 L528.5,186.0 Z" fill="#2a78d6"><title>2018-04: 994 mil</title></path>
+<text x="518.6" y="199" text-anchor="middle" class="eje">abr</text>
+<path d="M538.7,186.0 L538.7,57.1 Q538.7,54.1 541.7,54.1 L555.6,54.1 Q558.6,54.1 558.6,57.1 L558.6,186.0 Z" fill="#2a78d6"><title>2018-05: 993 mil</title></path>
+<text x="548.6" y="199" text-anchor="middle" class="eje">may</text>
+<path d="M568.8,186.0 L568.8,74.4 Q568.8,71.4 571.8,71.4 L585.7,71.4 Q588.7,71.4 588.7,74.4 L588.7,186.0 Z" fill="#2a78d6"><title>2018-06: 863 mil</title></path>
+<text x="578.8" y="199" text-anchor="middle" class="eje">jun</text>
+<path d="M598.9,186.0 L598.9,72.4 Q598.9,69.4 601.9,69.4 L615.8,69.4 Q618.8,69.4 618.8,72.4 L618.8,186.0 Z" fill="#2a78d6"><title>2018-07: 878 mil</title></path>
+<text x="608.9" y="199" text-anchor="middle" class="eje">jul</text>
+<path d="M629.0,186.0 L629.0,76.3 Q629.0,73.3 632.0,73.3 L645.9,73.3 Q648.9,73.3 648.9,76.3 L648.9,186.0 Z" fill="#2a78d6"><title>2018-08: 849 mil</title></path>
+<text x="638.9" y="68.3" text-anchor="middle" class="valor">849 mil</text>
+<text x="638.9" y="199" text-anchor="middle" class="eje">ago</text>
+<line x1="52" x2="654" y1="186.0" y2="186.0" stroke="#52514e" stroke-width="1"/>
+</svg>
+  </figure>
+  <p>El GMV de noviembre de 2017 fue 1.003.862 BRL, frente a una base de 535.702. Ese mismo mes las entregas
+  tardías subieron a 14,3 % (base 3,7 %) y la nota de reseñas bajó a 3,95 (base
+  4,20). La retención neta fue 126 % y en diciembre cayó a 67 %. El detector de anomalías
+  marca las tres métricas en ese mes.</p>
+  </div>
+
+  <div class="hallazgo">
+  <h3>4. Febrero y marzo de 2018: las entregas se retrasan</h3>
+  <figure>
+    <figcaption>Entregas tardías por mes de compra
+      <span>De cada 100 pedidos entregados, cuántos llegaron después de la fecha prometida.</span></figcaption>
+    <svg viewBox="0 0 660 220" role="img" aria-label="Entregas tardías por mes de compra">
+<line x1="52" x2="654" y1="186.0" y2="186.0" stroke="#e4e3de" stroke-width="1"/>
+<text x="44" y="189.5" text-anchor="end" class="eje">0 %</text>
+<line x1="52" x2="654" y1="152.8" y2="152.8" stroke="#e4e3de" stroke-width="1"/>
+<text x="44" y="156.3" text-anchor="end" class="eje">5 %</text>
+<line x1="52" x2="654" y1="119.6" y2="119.6" stroke="#e4e3de" stroke-width="1"/>
+<text x="44" y="123.1" text-anchor="end" class="eje">10 %</text>
+<line x1="52" x2="654" y1="86.4" y2="86.4" stroke="#e4e3de" stroke-width="1"/>
+<text x="44" y="89.9" text-anchor="end" class="eje">15 %</text>
+<line x1="52" x2="654" y1="53.2" y2="53.2" stroke="#e4e3de" stroke-width="1"/>
+<text x="44" y="56.7" text-anchor="end" class="eje">20 %</text>
+<line x1="52" x2="654" y1="20.0" y2="20.0" stroke="#e4e3de" stroke-width="1"/>
+<text x="44" y="23.5" text-anchor="end" class="eje">25 %</text>
+<path d="M57.1,186.0 L57.1,168.6 Q57.1,165.6 60.1,165.6 L74.0,165.6 Q77.0,165.6 77.0,168.6 L77.0,186.0 Z" fill="#2a78d6"><title>2017-01: 3,1 %</title></path>
+<text x="67.0" y="199" text-anchor="middle" class="eje">ene</text>
+<text x="67.0" y="212" text-anchor="middle" class="eje anio">2017</text>
+<path d="M87.2,186.0 L87.2,167.7 Q87.2,164.7 90.2,164.7 L104.1,164.7 Q107.1,164.7 107.1,167.7 L107.1,186.0 Z" fill="#2a78d6"><title>2017-02: 3,2 %</title></path>
+<text x="97.2" y="199" text-anchor="middle" class="eje">feb</text>
+<path d="M117.3,186.0 L117.3,151.9 Q117.3,148.9 120.3,148.9 L134.2,148.9 Q137.2,148.9 137.2,151.9 L137.2,186.0 Z" fill="#2a78d6"><title>2017-03: 5,6 %</title></path>
+<text x="127.3" y="199" text-anchor="middle" class="eje">mar</text>
+<path d="M147.4,186.0 L147.4,136.8 Q147.4,133.8 150.4,133.8 L164.3,133.8 Q167.3,133.8 167.3,136.8 L167.3,186.0 Z" fill="#2a78d6"><title>2017-04: 7,9 %</title></path>
+<text x="157.3" y="199" text-anchor="middle" class="eje">abr</text>
+<path d="M177.5,186.0 L177.5,165.0 Q177.5,162.0 180.5,162.0 L194.4,162.0 Q197.4,162.0 197.4,165.0 L197.4,186.0 Z" fill="#2a78d6"><title>2017-05: 3,6 %</title></path>
+<text x="187.4" y="199" text-anchor="middle" class="eje">may</text>
+<path d="M207.6,186.0 L207.6,163.4 Q207.6,160.4 210.6,160.4 L224.5,160.4 Q227.5,160.4 227.5,163.4 L227.5,186.0 Z" fill="#2a78d6"><title>2017-06: 3,9 %</title></path>
+<text x="217.5" y="199" text-anchor="middle" class="eje">jun</text>
+<path d="M237.7,186.0 L237.7,166.2 Q237.7,163.2 240.7,163.2 L254.6,163.2 Q257.6,163.2 257.6,166.2 L257.6,186.0 Z" fill="#2a78d6"><title>2017-07: 3,4 %</title></path>
+<text x="247.7" y="199" text-anchor="middle" class="eje">jul</text>
+<path d="M267.8,186.0 L267.8,167.0 Q267.8,164.0 270.8,164.0 L284.7,164.0 Q287.7,164.0 287.7,167.0 L287.7,186.0 Z" fill="#2a78d6"><title>2017-08: 3,3 %</title></path>
+<text x="277.8" y="199" text-anchor="middle" class="eje">ago</text>
+<path d="M297.9,186.0 L297.9,154.5 Q297.9,151.5 300.9,151.5 L314.8,151.5 Q317.8,151.5 317.8,154.5 L317.8,186.0 Z" fill="#2a78d6"><title>2017-09: 5,2 %</title></path>
+<text x="307.9" y="199" text-anchor="middle" class="eje">sep</text>
+<path d="M328.0,186.0 L328.0,153.9 Q328.0,150.9 331.0,150.9 L344.9,150.9 Q347.9,150.9 347.9,153.9 L347.9,186.0 Z" fill="#2a78d6"><title>2017-10: 5,3 %</title></path>
+<text x="338.0" y="199" text-anchor="middle" class="eje">oct</text>
+<path d="M358.1,186.0 L358.1,94.0 Q358.1,91.0 361.1,91.0 L375.0,91.0 Q378.0,91.0 378.0,94.0 L378.0,186.0 Z" fill="#eb6834"><title>2017-11: 14,3 %</title></path>
+<text x="368.1" y="86.0" text-anchor="middle" class="valor">14,3 %</text>
+<text x="368.1" y="199" text-anchor="middle" class="eje">nov</text>
+<path d="M388.2,186.0 L388.2,133.4 Q388.2,130.4 391.2,130.4 L405.1,130.4 Q408.1,130.4 408.1,133.4 L408.1,186.0 Z" fill="#2a78d6"><title>2017-12: 8,4 %</title></path>
+<text x="398.2" y="199" text-anchor="middle" class="eje">dic</text>
+<path d="M418.3,186.0 L418.3,145.4 Q418.3,142.4 421.3,142.4 L435.2,142.4 Q438.2,142.4 438.2,145.4 L438.2,186.0 Z" fill="#2a78d6"><title>2018-01: 6,6 %</title></path>
+<text x="428.3" y="199" text-anchor="middle" class="eje">ene</text>
+<text x="428.3" y="212" text-anchor="middle" class="eje anio">2018</text>
+<path d="M448.4,186.0 L448.4,82.8 Q448.4,79.8 451.4,79.8 L465.3,79.8 Q468.3,79.8 468.3,82.8 L468.3,186.0 Z" fill="#eb6834"><title>2018-02: 16,0 %</title></path>
+<text x="458.4" y="74.8" text-anchor="middle" class="valor">16,0 %</text>
+<text x="458.4" y="199" text-anchor="middle" class="eje">feb</text>
+<path d="M478.5,186.0 L478.5,47.2 Q478.5,44.2 481.5,44.2 L495.4,44.2 Q498.4,44.2 498.4,47.2 L498.4,186.0 Z" fill="#eb6834"><title>2018-03: 21,4 %</title></path>
+<text x="488.5" y="39.2" text-anchor="middle" class="valor">21,4 %</text>
+<text x="488.5" y="199" text-anchor="middle" class="eje">mar</text>
+<path d="M508.6,186.0 L508.6,153.7 Q508.6,150.7 511.6,150.7 L525.5,150.7 Q528.5,150.7 528.5,153.7 L528.5,186.0 Z" fill="#2a78d6"><title>2018-04: 5,3 %</title></path>
+<text x="518.6" y="199" text-anchor="middle" class="eje">abr</text>
+<path d="M538.7,186.0 L538.7,134.3 Q538.7,131.3 541.7,131.3 L555.6,131.3 Q558.6,131.3 558.6,134.3 L558.6,186.0 Z" fill="#2a78d6"><title>2018-05: 8,2 %</title></path>
+<text x="548.6" y="199" text-anchor="middle" class="eje">may</text>
+<path d="M568.8,186.0 L568.8,180.0 Q568.8,177.0 571.8,177.0 L585.7,177.0 Q588.7,177.0 588.7,180.0 L588.7,186.0 Z" fill="#2a78d6"><title>2018-06: 1,4 %</title></path>
+<text x="578.8" y="199" text-anchor="middle" class="eje">jun</text>
+<path d="M598.9,186.0 L598.9,159.3 Q598.9,156.3 601.9,156.3 L615.8,156.3 Q618.8,156.3 618.8,159.3 L618.8,186.0 Z" fill="#2a78d6"><title>2018-07: 4,5 %</title></path>
+<text x="608.9" y="199" text-anchor="middle" class="eje">jul</text>
+<path d="M629.0,186.0 L629.0,120.0 Q629.0,117.0 632.0,117.0 L645.9,117.0 Q648.9,117.0 648.9,120.0 L648.9,186.0 Z" fill="#2a78d6"><title>2018-08: 10,4 %</title></path>
+<text x="638.9" y="199" text-anchor="middle" class="eje">ago</text>
+<line x1="52" x2="654" y1="186.0" y2="186.0" stroke="#52514e" stroke-width="1"/>
+</svg>
+  </figure>
+  <p>Las entregas tardías llegaron a 16,0 % en febrero y <b>21,4 % en marzo</b> de 2018, frente a
+  una base de 7,5 %. La nota de reseñas bajó a 3,86 y 3,76. El detector de anomalías marca las dos métricas en marzo. Los datos no dicen la causa,
+  y el agente no debe afirmar ninguna.</p>
+  </div>
+
+  <div class="hallazgo">
+  <h3>5. Los vendedores venden de forma intermitente</h3>
+  <figure>
+    <figcaption>Retención neta y bruta de GMV
+      <span>Por cada 100 BRL que vendían el mes anterior los vendedores activos, cuánto venden este mes.</span></figcaption>
+    <div class="leyenda"><span><i style="background:#2a78d6"></i>Retención neta</span><span><i style="background:#eb6834"></i>Retención bruta</span></div>
+    <svg viewBox="0 0 660 230" role="img" aria-label="Retención neta y bruta de GMV, mes contra mes">
+<line x1="44" x2="568.0" y1="196.0" y2="196.0" stroke="#e4e3de" stroke-width="1"/>
+<text x="36" y="199.5" text-anchor="end" class="eje">40 %</text>
+<line x1="44" x2="568.0" y1="159.6" y2="159.6" stroke="#e4e3de" stroke-width="1"/>
+<text x="36" y="163.1" text-anchor="end" class="eje">60 %</text>
+<line x1="44" x2="568.0" y1="123.2" y2="123.2" stroke="#e4e3de" stroke-width="1"/>
+<text x="36" y="126.7" text-anchor="end" class="eje">80 %</text>
+<line x1="44" x2="568.0" y1="86.8" y2="86.8" stroke="#e4e3de" stroke-width="1"/>
+<text x="36" y="90.3" text-anchor="end" class="eje">100 %</text>
+<line x1="44" x2="568.0" y1="50.4" y2="50.4" stroke="#e4e3de" stroke-width="1"/>
+<text x="36" y="53.9" text-anchor="end" class="eje">120 %</text>
+<line x1="44" x2="568.0" y1="14.0" y2="14.0" stroke="#e4e3de" stroke-width="1"/>
+<text x="36" y="17.5" text-anchor="end" class="eje">140 %</text>
+<text x="44.0" y="209" text-anchor="middle" class="eje">feb</text>
+<text x="44.0" y="222" text-anchor="middle" class="eje anio">2017</text>
+<text x="73.1" y="209" text-anchor="middle" class="eje">mar</text>
+<text x="102.2" y="209" text-anchor="middle" class="eje">abr</text>
+<text x="131.3" y="209" text-anchor="middle" class="eje">may</text>
+<text x="160.4" y="209" text-anchor="middle" class="eje">jun</text>
+<text x="189.6" y="209" text-anchor="middle" class="eje">jul</text>
+<text x="218.7" y="209" text-anchor="middle" class="eje">ago</text>
+<text x="247.8" y="209" text-anchor="middle" class="eje">sep</text>
+<text x="276.9" y="209" text-anchor="middle" class="eje">oct</text>
+<text x="306.0" y="209" text-anchor="middle" class="eje">nov</text>
+<text x="335.1" y="209" text-anchor="middle" class="eje">dic</text>
+<text x="364.2" y="209" text-anchor="middle" class="eje">ene</text>
+<text x="364.2" y="222" text-anchor="middle" class="eje anio">2018</text>
+<text x="393.3" y="209" text-anchor="middle" class="eje">feb</text>
+<text x="422.4" y="209" text-anchor="middle" class="eje">mar</text>
+<text x="451.6" y="209" text-anchor="middle" class="eje">abr</text>
+<text x="480.7" y="209" text-anchor="middle" class="eje">may</text>
+<text x="509.8" y="209" text-anchor="middle" class="eje">jun</text>
+<text x="538.9" y="209" text-anchor="middle" class="eje">jul</text>
+<text x="568.0" y="209" text-anchor="middle" class="eje">ago</text>
+<polyline points="44.0,50.2 73.1,56.9 102.2,123.5 131.3,51.8 160.4,135.4 189.6,84.2 218.7,99.3 247.8,94.0 276.9,106.2 306.0,39.5 335.1,146.8 364.2,71.6 393.3,124.1 422.4,83.4 451.6,112.4 480.7,105.1 509.8,131.7 538.9,116.8 568.0,121.2" fill="none" stroke="#2a78d6" stroke-width="2" stroke-linejoin="round"/>
+<circle cx="44.0" cy="50.2" r="4" fill="#2a78d6" stroke="#ffffff" stroke-width="2"><title>Retención neta 2017-02: 120,1</title></circle>
+<circle cx="73.1" cy="56.9" r="4" fill="#2a78d6" stroke="#ffffff" stroke-width="2"><title>Retención neta 2017-03: 116,4</title></circle>
+<circle cx="102.2" cy="123.5" r="4" fill="#2a78d6" stroke="#ffffff" stroke-width="2"><title>Retención neta 2017-04: 79,8</title></circle>
+<circle cx="131.3" cy="51.8" r="4" fill="#2a78d6" stroke="#ffffff" stroke-width="2"><title>Retención neta 2017-05: 119,2</title></circle>
+<circle cx="160.4" cy="135.4" r="4" fill="#2a78d6" stroke="#ffffff" stroke-width="2"><title>Retención neta 2017-06: 73,3</title></circle>
+<circle cx="189.6" cy="84.2" r="4" fill="#2a78d6" stroke="#ffffff" stroke-width="2"><title>Retención neta 2017-07: 101,4</title></circle>
+<circle cx="218.7" cy="99.3" r="4" fill="#2a78d6" stroke="#ffffff" stroke-width="2"><title>Retención neta 2017-08: 93,2</title></circle>
+<circle cx="247.8" cy="94.0" r="4" fill="#2a78d6" stroke="#ffffff" stroke-width="2"><title>Retención neta 2017-09: 96,0</title></circle>
+<circle cx="276.9" cy="106.2" r="4" fill="#2a78d6" stroke="#ffffff" stroke-width="2"><title>Retención neta 2017-10: 89,3</title></circle>
+<circle cx="306.0" cy="39.5" r="4" fill="#2a78d6" stroke="#ffffff" stroke-width="2"><title>Retención neta 2017-11: 126,0</title></circle>
+<circle cx="335.1" cy="146.8" r="4" fill="#2a78d6" stroke="#ffffff" stroke-width="2"><title>Retención neta 2017-12: 67,1</title></circle>
+<circle cx="364.2" cy="71.6" r="4" fill="#2a78d6" stroke="#ffffff" stroke-width="2"><title>Retención neta 2018-01: 108,3</title></circle>
+<circle cx="393.3" cy="124.1" r="4" fill="#2a78d6" stroke="#ffffff" stroke-width="2"><title>Retención neta 2018-02: 79,5</title></circle>
+<circle cx="422.4" cy="83.4" r="4" fill="#2a78d6" stroke="#ffffff" stroke-width="2"><title>Retención neta 2018-03: 101,9</title></circle>
+<circle cx="451.6" cy="112.4" r="4" fill="#2a78d6" stroke="#ffffff" stroke-width="2"><title>Retención neta 2018-04: 86,0</title></circle>
+<circle cx="480.7" cy="105.1" r="4" fill="#2a78d6" stroke="#ffffff" stroke-width="2"><title>Retención neta 2018-05: 90,0</title></circle>
+<circle cx="509.8" cy="131.7" r="4" fill="#2a78d6" stroke="#ffffff" stroke-width="2"><title>Retención neta 2018-06: 75,3</title></circle>
+<circle cx="538.9" cy="116.8" r="4" fill="#2a78d6" stroke="#ffffff" stroke-width="2"><title>Retención neta 2018-07: 83,5</title></circle>
+<circle cx="568.0" cy="121.2" r="4" fill="#2a78d6" stroke="#ffffff" stroke-width="2"><title>Retención neta 2018-08: 81,1</title></circle>
+<text x="577.0" y="125.2" class="valor">neta 81 %</text>
+<polyline points="44.0,152.8 73.1,151.1 102.2,162.7 131.3,150.0 160.4,166.7 189.6,149.7 218.7,142.1 247.8,146.5 276.9,147.1 306.0,134.1 335.1,169.4 364.2,144.2 393.3,160.1 422.4,142.2 451.6,151.1 480.7,150.2 509.8,165.1 538.9,162.4 568.0,161.0" fill="none" stroke="#eb6834" stroke-width="2" stroke-linejoin="round"/>
+<circle cx="44.0" cy="152.8" r="4" fill="#eb6834" stroke="#ffffff" stroke-width="2"><title>Retención bruta 2017-02: 63,7</title></circle>
+<circle cx="73.1" cy="151.1" r="4" fill="#eb6834" stroke="#ffffff" stroke-width="2"><title>Retención bruta 2017-03: 64,7</title></circle>
+<circle cx="102.2" cy="162.7" r="4" fill="#eb6834" stroke="#ffffff" stroke-width="2"><title>Retención bruta 2017-04: 58,3</title></circle>
+<circle cx="131.3" cy="150.0" r="4" fill="#eb6834" stroke="#ffffff" stroke-width="2"><title>Retención bruta 2017-05: 65,3</title></circle>
+<circle cx="160.4" cy="166.7" r="4" fill="#eb6834" stroke="#ffffff" stroke-width="2"><title>Retención bruta 2017-06: 56,1</title></circle>
+<circle cx="189.6" cy="149.7" r="4" fill="#eb6834" stroke="#ffffff" stroke-width="2"><title>Retención bruta 2017-07: 65,4</title></circle>
+<circle cx="218.7" cy="142.1" r="4" fill="#eb6834" stroke="#ffffff" stroke-width="2"><title>Retención bruta 2017-08: 69,6</title></circle>
+<circle cx="247.8" cy="146.5" r="4" fill="#eb6834" stroke="#ffffff" stroke-width="2"><title>Retención bruta 2017-09: 67,2</title></circle>
+<circle cx="276.9" cy="147.1" r="4" fill="#eb6834" stroke="#ffffff" stroke-width="2"><title>Retención bruta 2017-10: 66,9</title></circle>
+<circle cx="306.0" cy="134.1" r="4" fill="#eb6834" stroke="#ffffff" stroke-width="2"><title>Retención bruta 2017-11: 74,0</title></circle>
+<circle cx="335.1" cy="169.4" r="4" fill="#eb6834" stroke="#ffffff" stroke-width="2"><title>Retención bruta 2017-12: 54,6</title></circle>
+<circle cx="364.2" cy="144.2" r="4" fill="#eb6834" stroke="#ffffff" stroke-width="2"><title>Retención bruta 2018-01: 68,4</title></circle>
+<circle cx="393.3" cy="160.1" r="4" fill="#eb6834" stroke="#ffffff" stroke-width="2"><title>Retención bruta 2018-02: 59,7</title></circle>
+<circle cx="422.4" cy="142.2" r="4" fill="#eb6834" stroke="#ffffff" stroke-width="2"><title>Retención bruta 2018-03: 69,6</title></circle>
+<circle cx="451.6" cy="151.1" r="4" fill="#eb6834" stroke="#ffffff" stroke-width="2"><title>Retención bruta 2018-04: 64,7</title></circle>
+<circle cx="480.7" cy="150.2" r="4" fill="#eb6834" stroke="#ffffff" stroke-width="2"><title>Retención bruta 2018-05: 65,2</title></circle>
+<circle cx="509.8" cy="165.1" r="4" fill="#eb6834" stroke="#ffffff" stroke-width="2"><title>Retención bruta 2018-06: 57,0</title></circle>
+<circle cx="538.9" cy="162.4" r="4" fill="#eb6834" stroke="#ffffff" stroke-width="2"><title>Retención bruta 2018-07: 58,4</title></circle>
+<circle cx="568.0" cy="161.0" r="4" fill="#eb6834" stroke="#ffffff" stroke-width="2"><title>Retención bruta 2018-08: 59,2</title></circle>
+<text x="577.0" y="165.0" class="valor">bruta 59 %</text>
+<line x1="44" x2="568.0" y1="196.0" y2="196.0" stroke="#52514e" stroke-width="1"/>
+</svg>
+  </figure>
+  <p>Cada mes, entre 21 % y 33 % de los vendedores activos no vende nada (churn mensual), y la
+  retención bruta va de 55 % a 74 %. Pero parte de ellos vuelve: por eso el churn de un mes no es una
+  pérdida definitiva, como sí lo es una cancelación en SaaS.</p>
+  </div>
+</section>
+
+<!-- ======================================================================= ESTADO -->
+<section>
+  <h2><span class="num">7</span>Estado y lo que falta</h2>
+  <h3>Hecho</h3>
+  <ul>
+    <li>Datos reales cargados y comprobados (11 tablas).</li>
+    <li>Cinco archivos de vistas SQL, diccionario de 23 métricas, motor y servidor MCP con seis herramientas.</li>
+    <li>107 pruebas en verde, prueba de mutación y prueba del servidor como cliente.</li>
+    <li>Primera pregunta real respondida por Claude Code de punta a punta.</li>
+    <li>Hallazgos y preguntas candidatas para la demo (<code>datos/hallazgos.md</code>).</li>
+  </ul>
+  <h3>Falta</h3>
+  <ul>
+    <li>Preguntas de control con y sin la capa, y sus resultados.</li>
+    <li>Página de documentación con el tablero y el diccionario, y su PDF.</li>
+    <li>README con atribución a Olist y licencia.</li>
+    <li>Copia limpia del trabajo en Beemo para los primeros segundos del video.</li>
+    <li>Guion (meta: 4 minutos 40 segundos), ensayos y grabación.</li>
+    <li>Carpeta de Drive con el video, el PDF, el código sin los datos y las capturas.</li>
+  </ul>
+
+  <h3>Cómo correrlo</h3>
+  <pre>uv venv .venv
+uv pip install -r requirements.txt
+.venv/Scripts/python.exe -I datos/cargar.py          # carga los CSV a datos/olist.duckdb
+.venv/Scripts/python.exe -m pytest pruebas -q        # 107 pruebas
+.venv/Scripts/python.exe pruebas/probar_servidor.py  # llama las 6 herramientas
+claude                                               # Claude Code, con el servidor y las reglas</pre>
+
+  <h3>Glosario</h3>
+  <dl class="glosario">
+    <dt>GMV</dt><dd>Valor de lo que venden los vendedores, sin flete. No es ingreso de Olist.</dd>
+    <dt>BRL</dt><dd>Reales brasileños, la moneda de todos los valores.</dd>
+    <dt>Lead calificado (MQL)</dt><dd>Negocio que pidió contacto y pasó el primer filtro de marketing.</dd>
+    <dt>SDR y SR</dt><dd>El SDR califica al lead; el SR (ejecutivo comercial) lo cierra.</dd>
+    <dt>Vendedor</dt><dd>El negocio que vende sus productos en Olist. No es el SR.</dd>
+    <dt>Activación</dt><dd>Que un negocio cerrado haga su primera venta.</dd>
+    <dt>Censura</dt><dd>Cuando los casos recientes todavía no han tenido tiempo de mostrar el resultado. Hace ver caídas que no existen.</dd>
+    <dt>Cohorte</dt><dd>Grupo de vendedores que empezó en el mismo mes, seguido en el tiempo.</dd>
+    <dt>Churn</dt><dd>Aquí, vendedor que vendió el mes anterior y este mes no vendió nada.</dd>
+    <dt>Retención neta y bruta</dt><dd>Cuánto del GMV del mes anterior conservan los mismos vendedores. La neta suma lo que crecieron; la bruta solo cuenta lo que se perdió.</dd>
+    <dt>Vista SQL</dt><dd>Una consulta guardada con nombre, que se usa como si fuera una tabla.</dd>
+    <dt>DuckDB</dt><dd>Base de datos analítica que corre en un solo archivo, sin servidor.</dd>
+    <dt>MCP</dt><dd>Model Context Protocol: estándar abierto para que un asistente de IA use herramientas externas.</dd>
+    <dt>Claude Code</dt><dd>El asistente de programación de Anthropic con el que se construyó el proyecto y en el que corre el agente.</dd>
+  </dl>
+  <p class="fuente">Datos: Olist, "Marketing Funnel by Olist" y "Brazilian E-Commerce Public Dataset by Olist",
+  Kaggle, licencia CC BY-NC-SA 4.0. Este documento se genera con <code>docs/generar_guia.py</code>; todas sus
+  cifras salen del motor de métricas.</p>
+</section>
+
+</main>
+</body>
+</html>

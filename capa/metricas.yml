@@ -22,6 +22,10 @@
 #                               ella el resultado se marca como no fiable.
 
 general:
+  # Versión de la capa. Súbela cuando cambie una definición o una vista (capa/modelos).
+  # Además, el motor calcula una huella de este archivo y de las vistas: cambia sola con
+  # cualquier edición, aunque alguien olvide subir la versión. Las dos viajan en cada respuesta.
+  version: "1.0.0"
   fuente: >
     Datos reales, públicos y anonimizados de Olist (Brasil), publicados en Kaggle con licencia
     CC BY-NC-SA 4.0: "Marketing Funnel by Olist" y "Brazilian E-Commerce Public Dataset by Olist".

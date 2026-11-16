@@ -17,7 +17,7 @@ import sys
 
 RAIZ = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(RAIZ))
-from capa.motor import ErrorDeMetrica, Motor  # noqa: E402
+from capa.motor import ErrorDeMetrica, Motor, huella_capa  # noqa: E402
 
 CRUDOS = RAIZ / "datos" / "crudos"
 MESES = [str(p) for p in pd.period_range("2017-01", "2018-08", freq="M")]
@@ -258,6 +258,41 @@ def test_poca_muestra_no_es_fiable(motor):
     por = {f["origen"]: f for f in r["filas"]}
     assert por["paid_search"]["fiable"] is True
     assert por["display"]["fiable"] is False                     # 6 cierres
+
+
+def test_cada_respuesta_dice_la_version_del_diccionario(motor):
+    sello = motor.sello
+    assert sello["version"] == motor.general["version"]
+    assert len(sello["huella"]) == 12
+    respuestas = [
+        motor.listar(), motor.definir("gmv"),
+        motor.consultar("gmv", "2018-03", "2018-03", por_mes=False),
+        motor.descomponer("gmv", "2018-02", "2018-03", "estado_vendedor"),
+        motor.anomalias("2018-03"),
+    ]
+    for r in respuestas:
+        assert r["diccionario"] == sello
+
+
+def test_la_huella_cambia_si_cambia_la_capa(tmp_path):
+    """Cambiar una definición o una vista cambia la huella, aunque nadie suba la versión."""
+    modelos = tmp_path / "modelos"
+    modelos.mkdir()
+    for sql in (RAIZ / "capa" / "modelos").glob("*.sql"):
+        (modelos / sql.name).write_bytes(sql.read_bytes())
+    dic = tmp_path / "metricas.yml"
+    dic.write_bytes((RAIZ / "capa" / "metricas.yml").read_bytes())
+    original = huella_capa(RAIZ / "capa" / "metricas.yml", RAIZ / "capa" / "modelos")
+    assert huella_capa(dic, modelos) == original                  # copia idéntica, misma huella
+
+    dic.write_text(dic.read_text(encoding="utf-8").replace("muestra_minima: 30", "muestra_minima: 31", 1),
+                   encoding="utf-8")
+    assert huella_capa(dic, modelos) != original                  # cambió una definición
+
+    dic.write_bytes((RAIZ / "capa" / "metricas.yml").read_bytes())
+    vista = modelos / "01_pedidos.sql"
+    vista.write_text(vista.read_text(encoding="utf-8").replace("'unavailable'", "'x'"), encoding="utf-8")
+    assert huella_capa(dic, modelos) != original                  # cambió una vista
 
 
 def test_descomposicion_aditiva_suma_el_cambio(motor):
