@@ -1,0 +1,501 @@
+# Diccionario de métricas — fuente única.
+# Lo leen tres consumidores: el agente (servidor MCP), el tablero y el analista.
+# Si una definición cambia, cambia aquí y en ningún otro lado.
+#
+# Campos de cada métrica:
+#   etiqueta, grupo, dueno      cómo se llama, a qué familia pertenece y qué equipo la decide
+#   definicion                  en lenguaje de negocio
+#   formula                     cómo se calcula, en una línea
+#   vista                       vista SQL de capa/modelos sobre la que se calcula
+#   valor                       expresión SQL agregada que da el número
+#   muestra                     expresión SQL agregada con el tamaño de muestra (el denominador)
+#   muestra_minima              por debajo de esto el resultado se marca como no fiable
+#   filtro                      condición fija de la métrica (opcional)
+#   unidad                      BRL, %, conteo, días, puntos
+#   aditiva                     true si se puede sumar entre segmentos
+#   dimensiones                 por cuáles columnas se puede abrir (lista cerrada)
+#   criterios_de_lectura        trampas y límites que hay que conocer antes de leerla
+#   no_confundir_con            la métrica vecina con la que se suele mezclar
+#   equivalente_saas            cómo se llamaría con datos de suscripción
+#   vigilar                     regla de alerta contra su propia línea base (opcional)
+#   ventana_valida              meses en los que la métrica se puede leer (opcional). Fuera de
+#                               ella el resultado se marca como no fiable.
+
+general:
+  fuente: >
+    Datos reales, públicos y anonimizados de Olist (Brasil), publicados en Kaggle con licencia
+    CC BY-NC-SA 4.0: "Marketing Funnel by Olist" y "Brazilian E-Commerce Public Dataset by Olist".
+  moneda: BRL (reales brasileños)
+  primer_mes_completo: "2017-01"
+  ultimo_mes_completo: "2018-08"
+  ventana_embudo: >
+    Los leads son una muestra aleatoria de 8.000 primeros contactos entre 2017-06 y 2018-05.
+    Los cierres solo están registrados desde 2017-12 (hasta 2018-11). Por eso la tasa de cierre
+    solo se puede leer para leads que entraron entre 2018-01 y 2018-05.
+  no_disponible: >
+    Estos datos no traen suscripciones ni gasto de adquisición. No se puede calcular MRR, ARR,
+    CAC, LTV ni efecto de precios. El GMV es venta de los vendedores, no ingreso recurrente.
+
+metricas:
+
+  # ------------------------------------------------------------------ EMBUDO
+  leads:
+    etiqueta: Leads calificados
+    grupo: Embudo
+    dueno: Growth
+    definicion: Negocios que pidieron contacto para vender en la plataforma, contados en el mes de su primer contacto.
+    formula: conteo de leads
+    vista: v_leads
+    valor: "count(*)"
+    muestra: "count(*)"
+    muestra_minima: 1
+    unidad: conteo
+    aditiva: true
+    dimensiones: [origen, landing]
+    criterios_de_lectura:
+      - Es una muestra aleatoria de 8.000 leads, no el total. Sirve para tasas y proporciones, no para volumen real.
+      - El salto de enero de 2018 (de 200 a 1.141) puede ser del muestreo o del negocio. Los datos no lo dicen.
+      - No se vigila con alertas. Una alerta sobre el tamaño de una muestra sería ruido.
+    no_confundir_con: cierres
+    equivalente_saas: Leads calificados (MQL)
+
+  tasa_cierre:
+    etiqueta: Tasa de cierre
+    grupo: Embudo
+    dueno: Sales
+    definicion: De cada 100 leads que entraron en un mes, cuántos terminaron cerrando negocio (en cualquier fecha posterior).
+    formula: leads que cerraron / leads, por mes de primer contacto
+    vista: v_leads
+    valor: "100.0 * count(*) FILTER (WHERE cerrado) / nullif(count(*), 0)"
+    muestra: "count(*)"
+    muestra_minima: 50
+    unidad: "%"
+    aditiva: false
+    dimensiones: [origen, landing]
+    ventana_valida: {desde: "2018-01", hasta: "2018-05"}
+    criterios_de_lectura:
+      - Se cuenta por cohorte de entrada del lead, no por mes de cierre. Así un mes con muchos cierres viejos no infla la tasa.
+      - Solo se puede leer para leads que entraron entre 2018-01 y 2018-05. Los cierres anteriores a diciembre de 2017 no están en los datos, así que los leads de 2017 muestran una tasa falsamente baja (entre 1 % y 5 %).
+      - Con menos de 50 leads en el grupo, la tasa no es fiable.
+    no_confundir_con: tasa_activacion_90d
+    equivalente_saas: Conversión de lead a cliente
+    vigilar: {sentido: ambos, ratio: 1.3, minimo: 3}
+
+  cierres:
+    etiqueta: Negocios cerrados
+    grupo: Embudo
+    dueno: Sales
+    definicion: Vendedores que firmaron con la plataforma, contados en el mes del cierre.
+    formula: conteo de cierres
+    vista: v_cierres
+    valor: "count(*)"
+    muestra: "count(*)"
+    muestra_minima: 1
+    unidad: conteo
+    aditiva: true
+    dimensiones: [origen, segmento, tipo_lead, tipo_negocio, sdr_id, sr_id]
+    criterios_de_lectura:
+      - Solo incluye cierres de leads que están en la muestra de 8.000.
+    no_confundir_con: leads
+    equivalente_saas: Clientes nuevos
+
+  dias_a_cierre:
+    etiqueta: Días hasta el cierre
+    grupo: Embudo
+    dueno: Sales
+    definicion: Tiempo típico entre el primer contacto del lead y el cierre del negocio.
+    formula: mediana de días entre primer contacto y cierre
+    vista: v_cierres
+    valor: "median(dias_cierre)"
+    muestra: "count(*)"
+    muestra_minima: 20
+    unidad: días
+    aditiva: false
+    dimensiones: [origen, segmento, tipo_lead, tipo_negocio, sdr_id, sr_id]
+    criterios_de_lectura:
+      - Se usa la mediana porque hay casos extremos (hasta 427 días) que mueven el promedio a 48.
+      - Los cierres de leads de 2017 tardan mucho más (mediana de 163 días o más) porque solo aparecen los que cerraron tarde. Para comparar equipos o canales, mirar cierres de leads de 2018.
+      - Hay un caso con valor negativo (cierre antes del primer contacto registrado). Es un error de origen y no se corrige.
+    no_confundir_con: dias_a_primera_venta
+    equivalente_saas: Ciclo de venta
+
+  # -------------------------------------------------------------- ACTIVACIÓN
+  tasa_activacion_90d:
+    etiqueta: Activación a 90 días
+    grupo: Activación
+    dueno: Product
+    definicion: De cada 100 negocios cerrados, cuántos hicieron al menos una venta en sus primeros 90 días.
+    formula: cierres con venta en 90 días / cierres con 90 días de observación
+    vista: v_cierres
+    filtro: "observable_90d"
+    valor: "100.0 * count(*) FILTER (WHERE activado_90d) / nullif(count(*), 0)"
+    muestra: "count(*)"
+    muestra_minima: 30
+    unidad: "%"
+    aditiva: false
+    dimensiones: [origen, segmento, tipo_lead, tipo_negocio, sdr_id, sr_id]
+    criterios_de_lectura:
+      - Solo entran cierres con 90 días completos de observación (cerrados hasta inicios de junio de 2018). Los pedidos terminan el 31 de agosto de 2018.
+      - Sin esta ventana, los cierres recientes parecen activarse menos solo porque han tenido menos tiempo. Es un sesgo de censura, no una caída real.
+      - Con menos de 30 cierres en el grupo, la tasa no es fiable.
+    no_confundir_con: tasa_cierre
+    equivalente_saas: Conversión de prueba a pago, o activación
+    vigilar: {sentido: baja, ratio: 1.25, minimo: 8}
+
+  gmv_por_cierre_90d:
+    etiqueta: GMV por cierre a 90 días
+    grupo: Activación
+    dueno: Growth
+    definicion: Cuánto vende en promedio un negocio cerrado en sus primeros 90 días, contando también a los que no vendieron nada.
+    formula: GMV de los primeros 90 días / cierres con 90 días de observación
+    vista: v_cierres
+    filtro: "observable_90d"
+    valor: "sum(gmv_90d) / nullif(count(*), 0)"
+    muestra: "count(*)"
+    muestra_minima: 30
+    unidad: BRL
+    aditiva: false
+    dimensiones: [origen, segmento, tipo_lead, tipo_negocio, sdr_id, sr_id]
+    criterios_de_lectura:
+      - Es el valor de un cierre para la plataforma. Un canal con muchos cierres que no venden tiene este número bajo.
+      - Muy concentrado. Pocos vendedores grandes mueven el promedio, así que conviene leerlo junto con la activación.
+    no_confundir_con: gmv_por_vendedor
+    equivalente_saas: Ingreso de los primeros 90 días por cliente nuevo
+
+  dias_a_primera_venta:
+    etiqueta: Días hasta la primera venta
+    grupo: Activación
+    dueno: Product
+    definicion: Tiempo típico entre el cierre del negocio y la primera venta del vendedor.
+    formula: mediana de días entre cierre y primera venta, solo entre los que vendieron
+    vista: v_cierres
+    filtro: "observable_90d AND activado_90d"
+    valor: "median(dias_primera_venta)"
+    muestra: "count(*)"
+    muestra_minima: 20
+    unidad: días
+    aditiva: false
+    dimensiones: [origen, segmento, tipo_lead, tipo_negocio]
+    criterios_de_lectura:
+      - Solo cuenta a quienes vendieron dentro de los 90 días. No dice nada de los que nunca vendieron.
+    no_confundir_con: dias_a_cierre
+    equivalente_saas: Tiempo hasta el primer valor
+
+  # ---------------------------------------------------------------- INGRESOS
+  gmv:
+    etiqueta: GMV
+    grupo: Ingresos
+    dueno: Finance
+    definicion: Valor de los productos vendidos por los vendedores en pedidos válidos, en el mes de la compra.
+    formula: suma del precio de los ítems de pedidos no cancelados ni no disponibles
+    vista: v_items
+    valor: "sum(precio)"
+    muestra: "count(*)"
+    muestra_minima: 1
+    unidad: BRL
+    aditiva: true
+    dimensiones: [estado_vendedor, categoria, del_embudo, tipo_lead]
+    criterios_de_lectura:
+      - No incluye flete. No es ingreso de la plataforma, es venta de los vendedores.
+      - Excluye pedidos cancelados y no disponibles (1.234 de 99.441).
+      - Nunca se calcula uniendo con la tabla de pagos. Un pedido tiene varios pagos y la unión infla el GMV 4,5 %.
+      - Los meses anteriores a 2017-01 y posteriores a 2018-08 están incompletos.
+    no_confundir_con: Valor pagado (incluye flete y se registra por pago, no por ítem)
+    equivalente_saas: MRR. No es lo mismo. El GMV no es recurrente ni contratado.
+    vigilar: {sentido: ambos, ratio: 1.3, minimo: 50000}
+
+  pedidos:
+    etiqueta: Pedidos
+    grupo: Ingresos
+    dueno: Operaciones
+    definicion: Pedidos válidos con al menos un ítem, en el mes de la compra.
+    formula: conteo de pedidos distintos
+    vista: v_items
+    valor: "count(DISTINCT order_id)"
+    muestra: "count(DISTINCT order_id)"
+    muestra_minima: 1
+    unidad: conteo
+    aditiva: false
+    dimensiones: [estado_vendedor, categoria, del_embudo, tipo_lead]
+    criterios_de_lectura:
+      - Un pedido puede tener ítems de varios vendedores o categorías. Al abrir por esas dimensiones, un pedido cuenta en cada grupo y la suma supera el total.
+      - Hay 775 pedidos sin ítems en los datos. No entran.
+    no_confundir_con: Ítems vendidos
+    equivalente_saas: Transacciones
+
+  ticket_promedio:
+    etiqueta: Ticket promedio
+    grupo: Ingresos
+    dueno: Finance
+    definicion: Valor promedio de un pedido válido, sin flete.
+    formula: GMV / pedidos
+    vista: v_items
+    valor: "sum(precio) / nullif(count(DISTINCT order_id), 0)"
+    muestra: "count(DISTINCT order_id)"
+    muestra_minima: 30
+    unidad: BRL
+    aditiva: false
+    dimensiones: [estado_vendedor, categoria, del_embudo, tipo_lead]
+    criterios_de_lectura:
+      - Al abrir por vendedor o categoría es el valor de la parte del pedido que le corresponde a ese grupo.
+    no_confundir_con: gmv_por_vendedor
+    equivalente_saas: Valor promedio por transacción
+
+  vendedores_activos:
+    etiqueta: Vendedores activos
+    grupo: Ingresos
+    dueno: Growth
+    definicion: Vendedores con al menos una venta válida en el mes.
+    formula: conteo de vendedores distintos con venta
+    vista: v_items
+    valor: "count(DISTINCT seller_id)"
+    muestra: "count(DISTINCT seller_id)"
+    muestra_minima: 1
+    unidad: conteo
+    aditiva: false
+    dimensiones: [estado_vendedor, del_embudo, tipo_lead]
+    criterios_de_lectura:
+      - Pedido para varios meses a la vez, devuelve vendedores distintos en todo el periodo, no la suma de los meses.
+    no_confundir_con: cierres
+    equivalente_saas: Clientes activos
+    vigilar: {sentido: baja, ratio: 1.15, minimo: 50}
+
+  gmv_por_vendedor:
+    etiqueta: GMV por vendedor activo
+    grupo: Ingresos
+    dueno: Finance
+    definicion: Cuánto vende en promedio un vendedor activo en el mes.
+    formula: GMV / vendedores activos
+    vista: v_items
+    valor: "sum(precio) / nullif(count(DISTINCT seller_id), 0)"
+    muestra: "count(DISTINCT seller_id)"
+    muestra_minima: 30
+    unidad: BRL
+    aditiva: false
+    dimensiones: [estado_vendedor, del_embudo, tipo_lead]
+    criterios_de_lectura:
+      - Solo cuenta a los que vendieron. Para el valor de un cierre, incluidos los que no venden, usar gmv_por_cierre_90d.
+    no_confundir_con: gmv_por_cierre_90d
+    equivalente_saas: ARPA (ingreso promedio por cuenta)
+
+  # --------------------------------------------------- MOVIMIENTOS Y RETENCIÓN
+  gmv_nuevo:
+    etiqueta: GMV nuevo
+    grupo: Movimientos de GMV
+    dueno: Growth
+    definicion: GMV de vendedores que venden por primera vez este mes.
+    formula: suma del GMV de vendedores sin ninguna venta anterior
+    vista: v_mov
+    filtro: "tipo = 'nuevo'"
+    valor: "sum(delta)"
+    muestra: "count(*)"
+    muestra_minima: 1
+    unidad: BRL
+    aditiva: true
+    dimensiones: [estado_vendedor, del_embudo, tipo_lead]
+    criterios_de_lectura:
+      - Nuevo significa primera venta en toda la historia de los datos, no en el periodo consultado.
+    no_confundir_con: gmv_reactivacion
+    equivalente_saas: MRR nuevo
+
+  gmv_expansion:
+    etiqueta: GMV de expansión
+    grupo: Movimientos de GMV
+    dueno: Growth
+    definicion: Aumento de GMV de vendedores que ya vendían el mes anterior y este mes vendieron más.
+    formula: suma de (GMV del mes − GMV del mes anterior) en vendedores que crecieron
+    vista: v_mov
+    filtro: "tipo = 'expansion'"
+    valor: "sum(delta)"
+    muestra: "count(*)"
+    muestra_minima: 1
+    unidad: BRL
+    aditiva: true
+    dimensiones: [estado_vendedor, del_embudo, tipo_lead]
+    criterios_de_lectura:
+      - En un marketplace las ventas suben y bajan cada mes por temporada. Expansión aquí no implica una mejora de plan, como sí en SaaS.
+    no_confundir_con: gmv_nuevo
+    equivalente_saas: MRR de expansión
+
+  gmv_reactivacion:
+    etiqueta: GMV de reactivación
+    grupo: Movimientos de GMV
+    dueno: Growth
+    definicion: GMV de vendedores que no vendieron el mes anterior pero ya habían vendido antes.
+    formula: suma del GMV de vendedores que vuelven a vender
+    vista: v_mov
+    filtro: "tipo = 'reactivacion'"
+    valor: "sum(delta)"
+    muestra: "count(*)"
+    muestra_minima: 1
+    unidad: BRL
+    aditiva: true
+    dimensiones: [estado_vendedor, del_embudo, tipo_lead]
+    criterios_de_lectura:
+      - Es alto porque muchos vendedores venden de forma intermitente. Por eso el churn mensual se lee junto con este número.
+    no_confundir_con: gmv_nuevo
+    equivalente_saas: MRR de reactivación
+
+  gmv_contraccion:
+    etiqueta: GMV de contracción
+    grupo: Movimientos de GMV
+    dueno: Growth
+    definicion: Caída de GMV de vendedores que siguieron vendiendo pero vendieron menos que el mes anterior.
+    formula: suma de (GMV del mes − GMV del mes anterior) en vendedores que bajaron sin llegar a cero
+    vista: v_mov
+    filtro: "tipo = 'contraccion'"
+    valor: "sum(delta)"
+    muestra: "count(*)"
+    muestra_minima: 1
+    unidad: BRL
+    aditiva: true
+    dimensiones: [estado_vendedor, del_embudo, tipo_lead]
+    criterios_de_lectura:
+      - Es un número negativo.
+    no_confundir_con: gmv_baja
+    equivalente_saas: MRR de contracción
+
+  gmv_baja:
+    etiqueta: GMV perdido por bajas
+    grupo: Movimientos de GMV
+    dueno: Growth
+    definicion: GMV que tenían el mes anterior los vendedores que este mes no vendieron nada.
+    formula: suma negativa del GMV anterior de vendedores sin venta en el mes
+    vista: v_mov
+    filtro: "tipo = 'baja'"
+    valor: "sum(delta)"
+    muestra: "count(*)"
+    muestra_minima: 1
+    unidad: BRL
+    aditiva: true
+    dimensiones: [estado_vendedor, del_embudo, tipo_lead]
+    criterios_de_lectura:
+      - Es un número negativo.
+      - Baja aquí es un mes sin ventas. No es una cancelación de contrato, porque los datos no la registran. Parte de estos vendedores vuelve (ver gmv_reactivacion).
+    no_confundir_con: gmv_contraccion
+    equivalente_saas: MRR perdido por churn
+
+  churn_vendedores:
+    etiqueta: Churn mensual de vendedores
+    grupo: Retención
+    dueno: Growth
+    definicion: De cada 100 vendedores que vendieron el mes anterior, cuántos no vendieron nada este mes.
+    formula: vendedores con baja / vendedores activos el mes anterior
+    vista: v_mov
+    filtro: "gmv_previo > 0"
+    valor: "100.0 * count(*) FILTER (WHERE tipo = 'baja') / nullif(count(*), 0)"
+    muestra: "count(*)"
+    muestra_minima: 50
+    unidad: "%"
+    aditiva: false
+    dimensiones: [estado_vendedor, del_embudo, tipo_lead]
+    criterios_de_lectura:
+      - Mide inactividad de un mes, no cancelación. En estos datos ronda entre 21 % y 33 % porque muchos vendedores venden de forma intermitente.
+      - No es comparable con el churn de logos de un SaaS, donde la baja es una cancelación de contrato.
+    no_confundir_con: retencion_cohorte
+    equivalente_saas: Churn de logos
+    vigilar: {sentido: sube, ratio: 1.2, minimo: 4}
+
+  retencion_neta:
+    etiqueta: Retención neta de GMV
+    grupo: Retención
+    dueno: Finance
+    definicion: Por cada 100 reales que vendían el mes anterior los vendedores ya activos, cuánto venden esos mismos vendedores este mes.
+    formula: GMV del mes de los vendedores activos el mes anterior / GMV que tenían el mes anterior
+    vista: v_mov
+    filtro: "gmv_previo > 0"
+    valor: "100.0 * sum(gmv) / nullif(sum(gmv_previo), 0)"
+    muestra: "count(*)"
+    muestra_minima: 50
+    unidad: "%"
+    aditiva: false
+    dimensiones: [estado_vendedor, del_embudo, tipo_lead]
+    criterios_de_lectura:
+      - Incluye expansión, contracción y bajas. Excluye vendedores nuevos y reactivados.
+      - Es mensual y muy sensible a la temporada. Noviembre de 2017 da 126 % y diciembre 67 %.
+      - En SaaS la retención neta suele medirse a 12 meses sobre ingreso contratado. Esta es mes contra mes sobre ventas.
+    no_confundir_con: retencion_bruta
+    equivalente_saas: NRR (retención neta de ingresos)
+    vigilar: {sentido: baja, ratio: 1.2, minimo: 10}
+
+  retencion_bruta:
+    etiqueta: Retención bruta de GMV
+    grupo: Retención
+    dueno: Finance
+    definicion: Igual que la retención neta, pero sin contar lo que crecieron los vendedores. Nunca pasa de 100.
+    formula: suma del menor entre el GMV del mes y el del mes anterior / GMV del mes anterior
+    vista: v_mov
+    filtro: "gmv_previo > 0"
+    valor: "100.0 * sum(least(gmv, gmv_previo)) / nullif(sum(gmv_previo), 0)"
+    muestra: "count(*)"
+    muestra_minima: 50
+    unidad: "%"
+    aditiva: false
+    dimensiones: [estado_vendedor, del_embudo, tipo_lead]
+    criterios_de_lectura:
+      - Solo cuenta pérdidas (contracción y bajas). Sirve para ver cuánto se pierde sin que la expansión lo tape.
+    no_confundir_con: retencion_neta
+    equivalente_saas: GRR (retención bruta de ingresos)
+
+  retencion_cohorte:
+    etiqueta: Retención por cohorte
+    grupo: Retención
+    dueno: Growth
+    definicion: De cada 100 vendedores que hicieron su primera venta en un mes, cuántos venden N meses después.
+    formula: vendedores de la cohorte activos en el mes N / vendedores de la cohorte
+    vista: v_cohortes
+    valor: "100.0 * count(*) FILTER (WHERE activo) / nullif(count(*), 0)"
+    muestra: "count(*)"
+    muestra_minima: 50
+    unidad: "%"
+    aditiva: false
+    dimensiones: [meses_desde_primera_venta, estado_vendedor]
+    criterios_de_lectura:
+      - El mes es el de la primera venta (la cohorte). Hay que abrir siempre por meses_desde_primera_venta; sin esa dimensión mezcla todos los plazos.
+      - El mes 0 siempre da 100. Un vendedor puede estar inactivo en el mes 3 y activo en el mes 6.
+      - Solo se calculan plazos ya observables. Una cohorte de junio de 2018 solo tiene meses 0, 1 y 2.
+    no_confundir_con: churn_vendedores
+    equivalente_saas: Retención de logos por cohorte
+
+  # ----------------------------------------------------------------- CALIDAD
+  entregas_tardias:
+    etiqueta: Entregas tardías
+    grupo: Calidad
+    dueno: Operaciones
+    definicion: De cada 100 pedidos entregados, cuántos llegaron después de la fecha prometida al cliente.
+    formula: pedidos entregados después de la fecha estimada / pedidos entregados
+    vista: v_pedidos
+    filtro: "entregado"
+    valor: "100.0 * count(*) FILTER (WHERE tarde) / nullif(count(*), 0)"
+    muestra: "count(*)"
+    muestra_minima: 100
+    unidad: "%"
+    aditiva: false
+    dimensiones: [estado_cliente]
+    criterios_de_lectura:
+      - El mes es el de la compra, no el de la entrega.
+      - Solo cuenta pedidos ya entregados.
+    no_confundir_con: nota_resenas
+    equivalente_saas: Incidentes de servicio
+    vigilar: {sentido: sube, ratio: 1.5, minimo: 4}
+
+  nota_resenas:
+    etiqueta: Nota de reseñas
+    grupo: Calidad
+    dueno: Operaciones
+    definicion: Calificación promedio de 1 a 5 que dieron los clientes a sus pedidos.
+    formula: promedio de la nota por pedido
+    vista: v_pedidos
+    filtro: "nota IS NOT NULL"
+    valor: "avg(nota)"
+    muestra: "count(*)"
+    muestra_minima: 100
+    unidad: puntos
+    aditiva: false
+    dimensiones: [estado_cliente]
+    criterios_de_lectura:
+      - Un pedido con varias reseñas cuenta una sola vez, con el promedio de sus notas.
+      - El mes es el de la compra, no el de la reseña.
+    no_confundir_con: entregas_tardias
+    equivalente_saas: Satisfacción (CSAT o NPS)
+    vigilar: {sentido: baja, ratio: 1.04, minimo: 0.15}

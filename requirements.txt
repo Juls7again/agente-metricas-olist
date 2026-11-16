@@ -1,0 +1,6 @@
+duckdb
+mcp
+pandas
+numpy
+pyyaml
+pytest

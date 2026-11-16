@@ -1,0 +1,7 @@
+.venv/
+__pycache__/
+*.pyc
+datos/crudos/
+datos/*.duckdb
+datos/*.duckdb.wal
+.pytest_cache/

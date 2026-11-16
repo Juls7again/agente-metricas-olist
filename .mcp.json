@@ -1,0 +1,13 @@
+{
+  "mcpServers": {
+    "metricas": {
+      "command": "C:\\Users\\Juls\\Downloads\\PY CLAUDE\\Mi_Primer_proyecto\\AGENTE METRICAS RETO ALEGRA\\.venv\\Scripts\\python.exe",
+      "args": [
+        "C:\\Users\\Juls\\Downloads\\PY CLAUDE\\Mi_Primer_proyecto\\AGENTE METRICAS RETO ALEGRA\\servidor_mcp.py"
+      ],
+      "env": {
+        "PYTHONUTF8": "1"
+      }
+    }
+  }
+}
