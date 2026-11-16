@@ -233,7 +233,30 @@ def recoger():
     d["dias_cierre"] = con("dias_a_cierre", por_mes=False)[0]
     d["anom"] = {mes: m.anomalias(mes) for mes in ("2017-11", "2018-03", "2018-05")}
     d["dic"] = yaml.safe_load((RAIZ / "capa" / "metricas.yml").read_text(encoding="utf-8"))
+    d["control"] = resumen_control(d["dic"])
     return d
+
+
+def resumen_control(dic):
+    """Cuenta las respuestas iguales a la cifra oficial en las preguntas de control."""
+    import json
+    sys.path.insert(0, str(RAIZ / "pruebas"))
+    from evaluar_agente import CONDICIONES, PREGUNTAS, RESULTADOS, clasificar
+    preguntas = {q["id"]: q for q in yaml.safe_load(PREGUNTAS.read_text(encoding="utf-8"))["preguntas"]}
+    ultimas = {}
+    for linea in RESULTADOS.read_text(encoding="utf-8").splitlines():
+        if linea.strip():
+            f = json.loads(linea)
+            ultimas[(f["id"], f["condicion"])] = f
+    out = {c: {"igual": 0, "n": 0} for c in CONDICIONES}
+    for (qid, c), f in ultimas.items():
+        if f["estado"] != "ok" or qid not in preguntas:
+            continue
+        q = preguntas[qid]
+        unidad = dic["metricas"][q["esperado"]["metrica"]]["unidad"] if "metrica" in q["esperado"] else None
+        out[c]["n"] += 1
+        out[c]["igual"] += clasificar(f.get("valor"), f.get("esperado"), unidad, q.get("tol_abs", 0.0)) == "igual"
+    return out
 
 
 # ----------------------------------------------------------------------------- piezas del documento
@@ -722,11 +745,14 @@ pre { font: 8.6pt/1.45 Consolas, monospace; background: var(--suave); padding: 7
     <tr><td>Mutación</td><td>Se quitó a propósito la exclusión de pedidos "no disponibles" para ver si las pruebas lo notaban.</td><td>12 pruebas fallaron. Se restauró.</td></tr>
     <tr><td>Servidor como cliente real</td><td><code>pruebas/probar_servidor.py</code> llama las seis herramientas, incluida una métrica que no existe (<code>mrr</code>) y un <code>DROP TABLE</code>.</td><td>Las seis responden. Las dos llamadas malas se rechazan con un mensaje útil.</td></tr>
     <tr><td>De punta a punta</td><td>Una pregunta de negocio hecha a Claude Code con el servidor conectado.</td><td>Respuesta correcta en 49 s.</td></tr>
+    <tr><td>Preguntas de control</td><td>Las mismas 12 preguntas de negocio a Claude Code (Sonnet), con la capa y solo con SQL libre sobre las tablas crudas.</td><td>Cifra oficial: <b>$ctl_con de $ctl_n_con con la capa</b>, $ctl_sin de $ctl_n_sin sin ella.</td></tr>
   </table>
-  <div class="caja alerta">
-    <p><b>Pendiente:</b> preguntas de control hechas a Claude Code con la capa y sin ella (solo con SQL libre
-    sobre las tablas crudas), para medir si la capa cambia la exactitud de las respuestas. Se reportará lo que
-    salga. Si sin la capa acierta igual, el argumento pasa a ser consistencia y trazabilidad, no exactitud.</p>
+  <div class="caja">
+    <p><b>Lo que mostraron las preguntas de control.</b> Sin la capa, el agente respondió rápido y con
+    seguridad, pero con su propia definición: contó pedidos cancelados, usó los pagos (que incluyen flete)
+    para el ticket, cayó en la censura de la activación e incluyó leads de 2017 cuyos cierres no están
+    registrados. No calculó mal: definió distinto. Con la capa, las 12 respuestas dieron la cifra oficial.
+    El detalle, con el SQL que usó en cada caso, está en <code>pruebas/RESULTADOS.md</code>.</p>
   </div>
 
   <h3>Decisiones de diseño y por qué</h3>
@@ -826,16 +852,16 @@ pre { font: 8.6pt/1.45 Consolas, monospace; background: var(--suave); padding: 7
     <li>Cinco archivos de vistas SQL, diccionario de 23 métricas, motor y servidor MCP con seis herramientas.</li>
     <li>107 pruebas en verde, prueba de mutación y prueba del servidor como cliente.</li>
     <li>Primera pregunta real respondida por Claude Code de punta a punta.</li>
+    <li>Preguntas de control con y sin la capa: $ctl_con de $ctl_n_con contra $ctl_sin de $ctl_n_sin.</li>
+    <li>Reglas para responder dentro del servidor y versión del diccionario en cada respuesta.</li>
+    <li>README con atribución a Olist y licencia.</li>
     <li>Hallazgos y preguntas candidatas para la demo (<code>datos/hallazgos.md</code>).</li>
   </ul>
   <h3>Falta</h3>
   <ul>
-    <li>Preguntas de control con y sin la capa, y sus resultados.</li>
-    <li>Página de documentación con el tablero y el diccionario, y su PDF.</li>
-    <li>README con atribución a Olist y licencia.</li>
     <li>Copia limpia del trabajo en Beemo para los primeros segundos del video.</li>
     <li>Guion (meta: 4 minutos 40 segundos), ensayos y grabación.</li>
-    <li>Carpeta de Drive con el video, el PDF, el código sin los datos y las capturas.</li>
+    <li>Entrega en Teamtailor: el video, este PDF, el código sin los datos y las capturas.</li>
   </ul>
 
   <h3>Cómo correrlo</h3>
@@ -1050,6 +1076,8 @@ def main():
         "feb_nota": num(d["nota_mes"]["2018-02"], 2), "mar_nota": num(d["nota_mes"]["2018-03"], 2),
         "churn_min": num(min(churn)), "churn_max": num(max(churn)),
         "grr_min": num(min(grr)), "grr_max": num(max(grr)),
+        "ctl_con": d["control"]["con_capa"]["igual"], "ctl_n_con": d["control"]["con_capa"]["n"],
+        "ctl_sin": d["control"]["sin_capa"]["igual"], "ctl_n_sin": d["control"]["sin_capa"]["n"],
         "tabla_metricas": tabla_metricas(d["dic"]), "ficha": ficha_metrica(d["dic"], "tasa_activacion_90d"),
         "diagrama_modelo": diagrama_modelo(d), "diagrama_fechas": diagrama_fechas(),
         "diagrama_arquitectura": diagrama_arquitectura(),
