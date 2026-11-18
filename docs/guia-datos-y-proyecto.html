@@ -28,7 +28,7 @@ code { font: 8.8pt/1.3 Consolas, "Cascadia Mono", monospace; background: var(--s
   padding: 0 3px; border-radius: 3px; }
 b, strong { font-weight: 600; }
 .capitulo { break-before: page; page-break-before: always; }
-.portada { padding-top: 14mm; }
+.portada { padding-top: 4mm; }
 .eyebrow { font-size: 8.5pt; letter-spacing: .12em; text-transform: uppercase; color: var(--azul);
   font-weight: 600; margin-bottom: 10pt; }
 .subtitulo { font-size: 13pt; color: var(--tinta2); margin: 0 0 14pt; }
@@ -39,6 +39,18 @@ b, strong { font-weight: 600; }
 .cifra { border-top: 3px solid var(--azul); background: var(--suave); padding: 8pt 9pt 9pt; }
 .cifra b { display: block; font: 600 20pt/1.1 Georgia, serif; }
 .cifra span { font-size: 8.6pt; color: var(--tinta2); }
+.portada .autor { margin-bottom: 12pt; }
+.portada .cifras { margin: 10pt 0 12pt; }
+.resumen { display: grid; grid-template-columns: 32mm 1fr; gap: 5pt 12pt; margin: 0 0 4pt; }
+.resumen dt { font: 600 10.5pt/1.35 Georgia, serif; color: var(--azul); }
+.resumen dd { margin: 0; }
+.resumen .pasos { margin: 5pt 0 0; }
+.resumen .pasos li { margin-bottom: 3pt; }
+.control td, .control th { font-size: 8.4pt; }
+.respuesta { border: 1px solid var(--linea); border-radius: 4px; padding: 8pt 11pt; margin: 6pt 0 10pt;
+  font-size: 9.4pt; break-inside: avoid; }
+.respuesta ul { margin: 2pt 0 6pt; }
+.junto { break-inside: avoid; page-break-inside: avoid; }
 .pasos { counter-reset: paso; list-style: none; padding: 0; }
 .pasos li { counter-increment: paso; position: relative; padding-left: 24pt; margin-bottom: 6pt; }
 .pasos li::before { content: counter(paso); position: absolute; left: 0; top: 0; width: 16pt; height: 16pt;
@@ -105,35 +117,43 @@ pre { font: 8.6pt/1.45 Consolas, monospace; background: var(--suave); padding: 7
   forma de medirla.</p>
 
   <div class="cifras">
-    <div class="cifra"><b>11</b><span>tablas reales cargadas, todas cuadran con su CSV</span></div>
+    <div class="cifra"><b>12 de 12</b><span>preguntas de negocio con la cifra oficial usando la capa (4 de 12 sin ella)</span></div>
     <div class="cifra"><b>23</b><span>métricas definidas en un solo diccionario</span></div>
-    <div class="cifra"><b>6</b><span>herramientas que el agente puede usar</span></div>
-    <div class="cifra"><b>107</b><span>pruebas automáticas en verde</span></div>
+    <div class="cifra"><b>107</b><span>pruebas automáticas en verde, contra un cálculo aparte</span></div>
+    <div class="cifra"><b>11</b><span>tablas reales cargadas, todas cuadran con su CSV</span></div>
   </div>
 
-  <h3>El problema que resuelve</h3>
-  <p>Cuando un asistente de IA escribe su propio SQL, responde rápido, pero con su propia versión de
-  cada métrica. Dos personas que preguntan lo mismo pueden recibir dos números distintos, y ninguno dice
-  qué contó ni qué dejó por fuera.</p>
-  <p>Aquí el asistente no inventa la métrica: se la pide a una capa que tiene <b>una sola definición de cada
-  una</b>. Es la misma que usaría un tablero o un analista.</p>
-
-  <h3>Cómo funciona, en cuatro pasos</h3>
-  <ol class="pasos">
-    <li>Los CSV de Olist se cargan en una base local (DuckDB) y se comprueba que no se perdió ninguna fila.</li>
-    <li>Cinco archivos SQL limpian los datos una sola vez: sacan los pedidos cancelados, evitan duplicados y
-    fijan ventanas de tiempo.</li>
-    <li>Un diccionario (<code>metricas.yml</code>) define las 23 métricas: fórmula, dueño, trampas conocidas y
-    equivalente en SaaS.</li>
-    <li>Un servidor MCP le da a Claude Code seis herramientas para usar ese diccionario. Claude Code no calcula
-    cifras oficiales por su cuenta.</li>
-  </ol>
-
-  <div class="caja">
-    <p><b>Cómo se construyó.</b> Con Claude Code, el 15 de noviembre de 2026. Julián tomó las decisiones de
-    producto y de datos: construir un agente nuevo, usar datos reales en vez de simulados, escoger Olist y
-    definir cómo se entrega. Claude Code escribió el código, el SQL y las pruebas a partir de esas decisiones.</p>
-  </div>
+  <dl class="resumen">
+    <dt>Qué problema resuelve</dt>
+    <dd>Cuando un asistente de IA escribe su propio SQL, responde rápido, pero con su propia versión de cada
+    métrica. Dos personas que preguntan lo mismo pueden recibir dos números distintos, y ninguno dice qué
+    contó ni qué dejó por fuera.</dd>
+    <dt>Cómo se abordó</dt>
+    <dd>El asistente no inventa la métrica: se la pide a una capa que tiene <b>una sola definición de cada
+    una</b>, la misma que usaría un tablero o un analista.
+    <ol class="pasos">
+      <li>Los CSV de Olist se cargan en una base local (DuckDB) y se comprueba que no se perdió ninguna fila.</li>
+      <li>Cinco archivos SQL limpian los datos una sola vez: sacan los pedidos cancelados, evitan duplicados y
+      fijan ventanas de tiempo.</li>
+      <li>Un diccionario (<code>metricas.yml</code>) define las 23 métricas: fórmula, dueño, trampas conocidas y
+      equivalente en SaaS.</li>
+      <li>Un servidor MCP le da al agente seis herramientas para usar ese diccionario. El agente no calcula
+      cifras oficiales por su cuenta.</li>
+    </ol></dd>
+    <dt>Herramientas usadas</dt>
+    <dd>Claude Code, para construir el proyecto y como agente que responde (modelo Claude Sonnet en las pruebas
+    y la demo). MCP (Model Context Protocol), para conectar el agente con la capa. Python, DuckDB y SQL para
+    los datos; YAML para el diccionario; pandas y pytest para comprobar cada cifra.
+    <b>Cómo se repartió el trabajo:</b> Julián tomó las decisiones de producto y de datos (un agente nuevo, datos
+    reales y no simulados, Olist, la forma de entrega); Claude Code escribió el código, el SQL y las pruebas a
+    partir de ellas, el 15 de noviembre de 2026.</dd>
+    <dt>Resultado obtenido</dt>
+    <dd>Las mismas 12 preguntas de negocio a Claude Code: <b>con la capa, 12 de 12 dieron la
+    cifra oficial; solo con SQL libre, 4 de 12</b>. 107 pruebas comparan cada métrica con un cálculo
+    aparte en pandas. Y los datos reales dieron hallazgos para decidir: solo 43,3 % de los cierres vende en sus
+    primeros 90 días, y los leads online_big se activan 62,0 % frente a 25,3 % de los offline
+    (sección 6).</dd>
+  </dl>
 </section>
 
 <!-- ======================================================================= 1. DATOS -->
@@ -365,7 +385,7 @@ pre { font: 8.6pt/1.45 Consolas, monospace; background: var(--suave); padding: 7
   no pueden contradecirse.</p>
 
   <h3>Arquitectura</h3>
-  <figure class="diagrama"><svg viewBox="0 0 660 250" role="img" aria-label="Arquitectura del proyecto"><defs><marker id="punta" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#52514e"/></marker></defs><rect x="6" y="20" width="104" height="46" rx="5" fill="#ffffff" stroke="#2a78d6" stroke-width="1.5"/><text x="58.0" y="39.0" text-anchor="middle" font-size="11" font-weight="600" fill="#1d1d1b">CSV de Olist</text><text x="58.0" y="53.0" text-anchor="middle" font-size="9.5" fill="#52514e">11 archivos</text><rect x="134" y="20" width="104" height="46" rx="5" fill="#ffffff" stroke="#2a78d6" stroke-width="1.5"/><text x="186.0" y="39.0" text-anchor="middle" font-size="11" font-weight="600" fill="#1d1d1b">olist.duckdb</text><text x="186.0" y="53.0" text-anchor="middle" font-size="9.5" fill="#52514e">cargar.py</text><rect x="262" y="20" width="104" height="46" rx="5" fill="#ffffff" stroke="#2a78d6" stroke-width="1.5"/><text x="314.0" y="39.0" text-anchor="middle" font-size="11" font-weight="600" fill="#1d1d1b">Vistas SQL</text><text x="314.0" y="53.0" text-anchor="middle" font-size="9.5" fill="#52514e">capa/modelos</text><rect x="390" y="20" width="112" height="46" rx="5" fill="#ffffff" stroke="#eb6834" stroke-width="2"/><text x="446.0" y="39.0" text-anchor="middle" font-size="11" font-weight="600" fill="#1d1d1b">metricas.yml</text><text x="446.0" y="53.0" text-anchor="middle" font-size="9.5" fill="#52514e">23 definiciones</text><line x1="110" y1="43" x2="132" y2="43" stroke="#52514e" stroke-width="1.3" marker-end="url(#punta)"/><line x1="238" y1="43" x2="260" y2="43" stroke="#52514e" stroke-width="1.3" marker-end="url(#punta)"/><line x1="366" y1="43" x2="388" y2="43" stroke="#52514e" stroke-width="1.3" marker-end="url(#punta)"/><rect x="534" y="20" width="120" height="46" rx="5" fill="#ffffff" stroke="#bdbcb6" stroke-width="1.5"/><text x="594.0" y="39.0" text-anchor="middle" font-size="11" font-weight="600" fill="#1d1d1b">Tablero / analista</text><text x="594.0" y="53.0" text-anchor="middle" font-size="9.5" fill="#52514e">mismo diccionario</text><line x1="502" y1="43" x2="532" y2="43" stroke="#52514e" stroke-width="1.3" marker-end="url(#punta)"/><rect x="390" y="112" width="112" height="46" rx="5" fill="#ffffff" stroke="#2a78d6" stroke-width="1.5"/><text x="446.0" y="131.0" text-anchor="middle" font-size="11" font-weight="600" fill="#1d1d1b">motor.py</text><text x="446.0" y="145.0" text-anchor="middle" font-size="9.5" fill="#52514e">solo lectura</text><line x1="446" y1="66" x2="446" y2="110" stroke="#52514e" stroke-width="1.3" marker-end="url(#punta)"/><line x1="330" y1="66" x2="412" y2="110" stroke="#52514e" stroke-width="1.3" marker-end="url(#punta)"/><rect x="534" y="112" width="120" height="46" rx="5" fill="#ffffff" stroke="#bdbcb6" stroke-width="1.5"/><text x="594.0" y="131.0" text-anchor="middle" font-size="11" font-weight="600" fill="#1d1d1b">Pruebas</text><text x="594.0" y="145.0" text-anchor="middle" font-size="9.5" fill="#52514e">107, contra pandas</text><line x1="532" y1="135" x2="504" y2="135" stroke="#52514e" stroke-width="1.3" stroke-dasharray="4 3" marker-end="url(#punta)"/><rect x="390" y="194" width="112" height="46" rx="5" fill="#ffffff" stroke="#2a78d6" stroke-width="1.5"/><text x="446.0" y="213.0" text-anchor="middle" font-size="11" font-weight="600" fill="#1d1d1b">servidor_mcp.py</text><text x="446.0" y="227.0" text-anchor="middle" font-size="9.5" fill="#52514e">6 herramientas</text><line x1="446" y1="158" x2="446" y2="192" stroke="#52514e" stroke-width="1.3" marker-end="url(#punta)"/><rect x="180" y="194" width="150" height="46" rx="5" fill="#ffffff" stroke="#1d1d1b" stroke-width="2"/><text x="255.0" y="213.0" text-anchor="middle" font-size="11" font-weight="600" fill="#1d1d1b">Claude Code</text><text x="255.0" y="227.0" text-anchor="middle" font-size="9.5" fill="#52514e">+ CLAUDE.md (reglas)</text><line x1="388" y1="217" x2="332" y2="217" stroke="#52514e" stroke-width="1.3" marker-end="url(#punta)" marker-start="url(#punta)"/><rect x="6" y="194" width="120" height="46" rx="5" fill="#ffffff" stroke="#bdbcb6" stroke-width="1.5"/><text x="66.0" y="213.0" text-anchor="middle" font-size="11" font-weight="600" fill="#1d1d1b">Persona</text><text x="66.0" y="227.0" text-anchor="middle" font-size="9.5" fill="#52514e">pregunta en español</text><line x1="178" y1="217" x2="128" y2="217" stroke="#52514e" stroke-width="1.3" marker-end="url(#punta)" marker-start="url(#punta)"/><text x="14" y="112" font-size="9.5" fill="#52514e">La respuesta trae el número, la definición</text><text x="14" y="126" font-size="9.5" fill="#52514e">usada, los criterios de lectura y el SQL</text><text x="14" y="140" font-size="9.5" fill="#52514e">ejecutado. Claude Code no calcula cifras</text><text x="14" y="154" font-size="9.5" fill="#52514e">oficiales: se las pide al servidor.</text></svg></figure>
+  <figure class="diagrama"><svg viewBox="0 0 660 250" role="img" aria-label="Arquitectura del proyecto"><defs><marker id="punta" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#52514e"/></marker></defs><rect x="6" y="20" width="104" height="46" rx="5" fill="#ffffff" stroke="#2a78d6" stroke-width="1.5"/><text x="58.0" y="39.0" text-anchor="middle" font-size="11" font-weight="600" fill="#1d1d1b">CSV de Olist</text><text x="58.0" y="53.0" text-anchor="middle" font-size="9.5" fill="#52514e">11 archivos</text><rect x="134" y="20" width="104" height="46" rx="5" fill="#ffffff" stroke="#2a78d6" stroke-width="1.5"/><text x="186.0" y="39.0" text-anchor="middle" font-size="11" font-weight="600" fill="#1d1d1b">olist.duckdb</text><text x="186.0" y="53.0" text-anchor="middle" font-size="9.5" fill="#52514e">cargar.py</text><rect x="262" y="20" width="104" height="46" rx="5" fill="#ffffff" stroke="#2a78d6" stroke-width="1.5"/><text x="314.0" y="39.0" text-anchor="middle" font-size="11" font-weight="600" fill="#1d1d1b">Vistas SQL</text><text x="314.0" y="53.0" text-anchor="middle" font-size="9.5" fill="#52514e">capa/modelos</text><rect x="390" y="20" width="112" height="46" rx="5" fill="#ffffff" stroke="#eb6834" stroke-width="2"/><text x="446.0" y="39.0" text-anchor="middle" font-size="11" font-weight="600" fill="#1d1d1b">metricas.yml</text><text x="446.0" y="53.0" text-anchor="middle" font-size="9.5" fill="#52514e">23 definiciones</text><line x1="110" y1="43" x2="132" y2="43" stroke="#52514e" stroke-width="1.3" marker-end="url(#punta)"/><line x1="238" y1="43" x2="260" y2="43" stroke="#52514e" stroke-width="1.3" marker-end="url(#punta)"/><line x1="366" y1="43" x2="388" y2="43" stroke="#52514e" stroke-width="1.3" marker-end="url(#punta)"/><rect x="534" y="20" width="120" height="46" rx="5" fill="#ffffff" stroke="#bdbcb6" stroke-width="1.5"/><text x="594.0" y="39.0" text-anchor="middle" font-size="11" font-weight="600" fill="#1d1d1b">Tablero / analista</text><text x="594.0" y="53.0" text-anchor="middle" font-size="9.5" fill="#52514e">mismo diccionario</text><line x1="502" y1="43" x2="532" y2="43" stroke="#52514e" stroke-width="1.3" marker-end="url(#punta)"/><rect x="390" y="112" width="112" height="46" rx="5" fill="#ffffff" stroke="#2a78d6" stroke-width="1.5"/><text x="446.0" y="131.0" text-anchor="middle" font-size="11" font-weight="600" fill="#1d1d1b">motor.py</text><text x="446.0" y="145.0" text-anchor="middle" font-size="9.5" fill="#52514e">solo lectura</text><line x1="446" y1="66" x2="446" y2="110" stroke="#52514e" stroke-width="1.3" marker-end="url(#punta)"/><line x1="330" y1="66" x2="412" y2="110" stroke="#52514e" stroke-width="1.3" marker-end="url(#punta)"/><rect x="534" y="112" width="120" height="46" rx="5" fill="#ffffff" stroke="#bdbcb6" stroke-width="1.5"/><text x="594.0" y="131.0" text-anchor="middle" font-size="11" font-weight="600" fill="#1d1d1b">Pruebas</text><text x="594.0" y="145.0" text-anchor="middle" font-size="9.5" fill="#52514e">107, contra pandas</text><line x1="532" y1="135" x2="504" y2="135" stroke="#52514e" stroke-width="1.3" stroke-dasharray="4 3" marker-end="url(#punta)"/><rect x="390" y="194" width="112" height="46" rx="5" fill="#ffffff" stroke="#2a78d6" stroke-width="1.5"/><text x="446.0" y="213.0" text-anchor="middle" font-size="11" font-weight="600" fill="#1d1d1b">servidor_mcp.py</text><text x="446.0" y="227.0" text-anchor="middle" font-size="9.5" fill="#52514e">6 herramientas + reglas</text><line x1="446" y1="158" x2="446" y2="192" stroke="#52514e" stroke-width="1.3" marker-end="url(#punta)"/><rect x="180" y="194" width="150" height="46" rx="5" fill="#ffffff" stroke="#1d1d1b" stroke-width="2"/><text x="255.0" y="213.0" text-anchor="middle" font-size="11" font-weight="600" fill="#1d1d1b">Claude Code</text><text x="255.0" y="227.0" text-anchor="middle" font-size="9.5" fill="#52514e">u otro asistente MCP</text><line x1="388" y1="217" x2="332" y2="217" stroke="#52514e" stroke-width="1.3" marker-end="url(#punta)" marker-start="url(#punta)"/><rect x="6" y="194" width="120" height="46" rx="5" fill="#ffffff" stroke="#bdbcb6" stroke-width="1.5"/><text x="66.0" y="213.0" text-anchor="middle" font-size="11" font-weight="600" fill="#1d1d1b">Persona</text><text x="66.0" y="227.0" text-anchor="middle" font-size="9.5" fill="#52514e">pregunta en español</text><line x1="178" y1="217" x2="128" y2="217" stroke="#52514e" stroke-width="1.3" marker-end="url(#punta)" marker-start="url(#punta)"/><text x="14" y="112" font-size="9.5" fill="#52514e">La respuesta trae el número, la definición</text><text x="14" y="126" font-size="9.5" fill="#52514e">usada, los criterios de lectura y el SQL</text><text x="14" y="140" font-size="9.5" fill="#52514e">ejecutado. Claude Code no calcula cifras</text><text x="14" y="154" font-size="9.5" fill="#52514e">oficiales: se las pide al servidor.</text></svg></figure>
 
   <h3>Las piezas, una por una</h3>
   <p><b>1. Carga</b> (<code>datos/cargar.py</code>). Descomprime los archivos de Kaggle, crea una tabla por
@@ -501,7 +521,7 @@ pre { font: 8.6pt/1.45 Consolas, monospace; background: var(--suave); padding: 7
   <table>
     <tr><th>Prueba</th><th>Qué demuestra</th><th>Resultado</th></tr>
     <tr><td>Carga</td><td>Cada tabla tiene las mismas filas que su CSV.</td><td>11 de 11</td></tr>
-    <tr><td>Recalculo independiente</td><td>Las métricas del motor coinciden con un cálculo aparte en pandas, leyendo los CSV crudos.</td><td rowspan="5"><b>107 pruebas en verde</b> (pytest, unos 2 minutos)</td></tr>
+    <tr><td>Recalculo independiente</td><td>Las métricas del motor coinciden con un cálculo aparte en pandas, leyendo los CSV crudos.</td><td rowspan="5"><b>107 pruebas en verde</b> (pytest, unos 5 minutos)</td></tr>
     <tr><td>Conciliación de movimientos</td><td>En cada mes, GMV anterior + nuevo + expansión + reactivación − contracción − bajas = GMV del mes.</td></tr>
     <tr><td>Trampas</td><td>Unir con pagos infla el GMV 4,5 % (se comprueba el número), los cancelados no entran y la censura está controlada.</td></tr>
     <tr><td>Seguridad del SQL libre</td><td>Se rechazan escrituras, borrados, varias sentencias, lectura de archivos y filtros con SQL escondido.</td></tr>
@@ -516,7 +536,8 @@ pre { font: 8.6pt/1.45 Consolas, monospace; background: var(--suave); padding: 7
     seguridad, pero con su propia definición: contó pedidos cancelados, usó los pagos (que incluyen flete)
     para el ticket, cayó en la censura de la activación e incluyó leads de 2017 cuyos cierres no están
     registrados. No calculó mal: definió distinto. Con la capa, las 12 respuestas dieron la cifra oficial.
-    El detalle, con el SQL que usó en cada caso, está en <code>pruebas/RESULTADOS.md</code>.</p>
+    El detalle pregunta por pregunta está en el anexo, al final de esta guía; con el SQL que usó el agente en
+    cada caso, en <code>pruebas/RESULTADOS.md</code>.</p>
   </div>
 
   <h3>Decisiones de diseño y por qué</h3>
@@ -583,7 +604,8 @@ pre { font: 8.6pt/1.45 Consolas, monospace; background: var(--suave); padding: 7
 </svg>
     <div class="fuente">En gris, segmentos con menos de 30 cierres: el motor los marca como no fiables.</div>
   </figure>
-  <p>Por tipo de negocio: revendedor 48,8 % y 671 BRL por cierre (459 cierres); fabricante
+  <p>Los cierres online_big se activan 62,0 % y venden 1.605 BRL por cierre en 90 días; los offline,
+  25,3 % y 88 BRL. Por tipo de negocio: revendedor 48,8 % y 671 BRL por cierre (459 cierres); fabricante
   31,7 % y 161 BRL (199). Por origen: búsqueda pagada 54,8 % y búsqueda orgánica 38,9 %.
   <b>Límite:</b> el tipo de lead solo existe en los negocios cerrados. Se sabe que unos venden más una vez
   cerrados, no si cierran más.</p>
@@ -884,32 +906,56 @@ pre { font: 8.6pt/1.45 Consolas, monospace; background: var(--suave); padding: 7
 
 <!-- ======================================================================= ESTADO -->
 <section>
-  <h2><span class="num">7</span>Estado y lo que falta</h2>
-  <h3>Hecho</h3>
+  <h2><span class="num">7</span>Para Alegra</h2>
+  <h3>Lo que pide el cargo y dónde está en el proyecto</h3>
+  <table>
+    <tr><th>Lo que pide el aviso del cargo</th><th>Dónde está</th></tr>
+    <tr><td>Una capa analítica lista para agentes: definiciones, diccionarios y modelos de datos que otros asistentes puedan consumir.</td><td>El diccionario (<code>metricas.yml</code>), las vistas SQL y el servidor MCP. Las reglas para responder viajan con el servidor: las recibe cualquier asistente que se conecte.</td></tr>
+    <tr><td>Agentes de autoservicio para que los equipos respondan preguntas sencillas.</td><td>El agente responde en español, con la definición usada, la fiabilidad del número y una recomendación.</td></tr>
+    <tr><td>Usar agentes y LLMs para detectar anomalías y automatizar análisis.</td><td><code>detectar_anomalias</code> y <code>descomponer_cambio</code>. Marcaron noviembre de 2017, marzo de 2018 y mayo de 2018 (sección 6).</td></tr>
+    <tr><td>Documentación analítica: diccionarios de métricas, definiciones y criterios de lectura.</td><td>Cada una de las 23 métricas trae definición, fórmula, criterios de lectura, con qué no confundirla y dueño (sección 4).</td></tr>
+    <tr><td>Funnels, cohortes, conversión, retención, churn y expansión.</td><td>Embudo, activación, cohortes, retención neta y bruta, churn y movimientos de GMV.</td></tr>
+    <tr><td>Métricas SaaS: ARR/MRR, NRR, CAC, LTV, churn y expansión.</td><td>Cada métrica dice su equivalente en SaaS. NRR, GRR, churn y expansión se calculan sobre el GMV. MRR, CAC y LTV no se aproximan: los datos no los tienen.</td></tr>
+    <tr><td>Aterrizar definiciones con los equipos dueños de cada proceso.</td><td>Cada métrica tiene dueño: Growth, Sales, Product, Finance u Operaciones.</td></tr>
+    <tr><td>Convertir hallazgos en decisiones y medir el impacto.</td><td>Regla del agente: cerrar con una recomendación concreta y cómo medir si funcionó.</td></tr>
+    <tr><td>SQL avanzado para extraer, transformar, validar y modelar datos.</td><td>Cinco archivos de vistas SQL y 107 pruebas que comparan cada métrica con un cálculo aparte.</td></tr>
+  </table>
+
+  <h3>Límites</h3>
   <ul>
-    <li>Datos reales cargados y comprobados (11 tablas).</li>
-    <li>Cinco archivos de vistas SQL, diccionario de 23 métricas, motor y servidor MCP con seis herramientas.</li>
-    <li>107 pruebas en verde, prueba de mutación y prueba del servidor como cliente.</li>
-    <li>Primera pregunta real respondida por Claude Code de punta a punta.</li>
-    <li>Preguntas de control con y sin la capa: 12 de 12 contra 4 de 12.</li>
-    <li>Reglas para responder dentro del servidor y versión del diccionario en cada respuesta.</li>
-    <li>README con atribución a Olist y licencia.</li>
-    <li>Hallazgos y preguntas candidatas para la demo (<code>datos/hallazgos.md</code>).</li>
-  </ul>
-  <h3>Falta</h3>
-  <ul>
-    <li>Copia limpia del trabajo en Beemo para los primeros segundos del video.</li>
-    <li>Guion (meta: 4 minutos 40 segundos), ensayos y grabación.</li>
-    <li>Entrega en Teamtailor: el video, este PDF, el código sin los datos y las capturas.</li>
+    <li>Los leads son una muestra aleatoria de 8.000, no el total.</li>
+    <li>Hay pocos cierres por mes. Por eso cada métrica tiene una muestra mínima y marca lo que no es fiable.</li>
+    <li>Los datos no traen suscripciones, precios ni gasto de adquisición. No hay MRR, ARR, CAC ni LTV, y no se
+    aproximan con el GMV.</li>
+    <li>La capa corre en local. Para un equipo, el diccionario iría en un repositorio con revisión de cambios,
+    los datos en el warehouse y el servidor desplegado con una URL compartida.</li>
   </ul>
 
+  <h3>Primer mes en Alegra</h3>
+  <p>Hacer lo mismo con sus datos: acordar con cada equipo las métricas que más se discuten, escribirlas en el
+  diccionario con su dueño y conectar el agente al warehouse.</p>
+
   <h3>Cómo correrlo</h3>
-  <pre>uv venv .venv
+  <pre># Entorno (Python 3.13 y uv)
+uv venv .venv
 uv pip install -r requirements.txt
-.venv/Scripts/python.exe -I datos/cargar.py          # carga los CSV a datos/olist.duckdb
-.venv/Scripts/python.exe -m pytest pruebas -q        # 107 pruebas
-.venv/Scripts/python.exe pruebas/probar_servidor.py  # llama las 6 herramientas
-claude                                               # Claude Code, con el servidor y las reglas</pre>
+
+# Datos públicos de Kaggle, sin iniciar sesión
+mkdir -p datos/crudos
+curl -L -o datos/crudos/embudo.zip \
+  https://www.kaggle.com/api/v1/datasets/download/olistbr/marketing-funnel-olist
+curl -L -o datos/crudos/pedidos.zip \
+  https://www.kaggle.com/api/v1/datasets/download/olistbr/brazilian-ecommerce
+
+# Carga a DuckDB, con chequeo de filas contra cada CSV
+.venv/Scripts/python.exe -I datos/cargar.py datos/crudos datos/olist.duckdb
+
+# 107 pruebas y prueba de las 6 herramientas del servidor
+.venv/Scripts/python.exe -m pytest pruebas -q
+.venv/Scripts/python.exe pruebas/probar_servidor.py
+
+# Claude Code con el servidor metricas (antes, ajustar las rutas de .mcp.json a la carpeta local)
+claude</pre>
 
   <h3>Glosario</h3>
   <dl class="glosario">
@@ -931,6 +977,36 @@ claude                                               # Claude Code, con el servi
   <p class="fuente">Datos: Olist, "Marketing Funnel by Olist" y "Brazilian E-Commerce Public Dataset by Olist",
   Kaggle, licencia CC BY-NC-SA 4.0. Este documento se genera con <code>docs/generar_guia.py</code>; todas sus
   cifras salen del motor de métricas.</p>
+</section>
+
+<!-- ======================================================================= ANEXO -->
+<section class="capitulo">
+  <h2><span class="num">A</span>Anexo: la evidencia de las preguntas de control</h2>
+  <p>Las mismas 12 preguntas de negocio, escritas como las haría alguien de negocio y sin dar la
+  definición, se le hicieron a Claude Code (Sonnet) en dos condiciones. <b>Con capa:</b> solo las seis
+  herramientas del servidor. <b>Sin capa:</b> solo SQL de lectura sobre las tablas crudas, desde una carpeta
+  vacía, sin ver el diccionario, las vistas ni las trampas. La cifra oficial la calcula el motor. Las
+  conversaciones completas están en <code>pruebas/corridas/</code>.</p>
+  <table class="control"><tr><th>Pregunta</th><th class="n">Cifra oficial</th><th class="n">Con capa</th><th class="n">Sin capa</th><th>Qué hizo distinto sin la capa</th></tr><tr><td>¿Cuánto vendieron en total los vendedores de Olist en marzo de 2018, en reales?</td><td class="n">981.051,06</td><td class="n">981.051,06<br><span class="fuente">igual</span></td><td class="n">983.213,44<br><span class="fuente">cerca</span></td><td>Sumó también los pedidos cancelados del mes.</td></tr>
+<tr><td>¿Cuántos pedidos se hicieron en noviembre de 2017?</td><td class="n">7.421</td><td class="n">7.421<br><span class="fuente">igual</span></td><td class="n">7.544<br><span class="fuente">distinta</span></td><td>Contó todos los pedidos, incluidos cancelados, no disponibles y sin ítems.</td></tr>
+<tr><td>¿Cuál fue el ticket promedio de los pedidos de mayo de 2018, en reales?</td><td class="n">145,31</td><td class="n">145,31<br><span class="fuente">igual</span></td><td class="n">167,90<br><span class="fuente">distinta</span></td><td>Promedió los pagos, que incluyen el flete, sobre todos los pedidos.</td></tr>
+<tr><td>De los negocios que cerramos en el embudo comercial, ¿qué porcentaje hizo al menos una venta en sus primeros 90 días después del cierre?</td><td class="n">43,33 %</td><td class="n">43,33 %<br><span class="fuente">igual</span></td><td class="n">38,48 %<br><span class="fuente">distinta</span></td><td>Contó cierres que aún no tenían 90 días para vender (censura).</td></tr>
+<tr><td>De los negocios cerrados con tipo de lead online_big, ¿qué porcentaje vendió algo en sus primeros 90 días después del cierre?</td><td class="n">62 %</td><td class="n">62 %<br><span class="fuente">igual</span></td><td class="n">54,76 %<br><span class="fuente">distinta</span></td><td>Lo mismo: contó cierres sin 90 días de observación.</td></tr>
+<tr><td>¿Qué porcentaje de los leads que llegaron por paid_search terminó cerrando negocio?</td><td class="n">14,81 %</td><td class="n">14,81 %<br><span class="fuente">igual</span></td><td class="n">12,30 %<br><span class="fuente">distinta</span></td><td>Incluyó leads de 2017, cuyos cierres no están registrados.</td></tr>
+<tr><td>De los leads que entraron en mayo de 2018, ¿qué porcentaje terminó cerrando negocio?</td><td class="n">9,98 %</td><td class="n">9,98 %<br><span class="fuente">igual</span></td><td class="n">9,98 %<br><span class="fuente">igual</span></td><td>Nada: dio la misma cifra.</td></tr>
+<tr><td>¿Qué porcentaje de los pedidos comprados en marzo de 2018 llegó después de la fecha de entrega estimada?</td><td class="n">21,36 %</td><td class="n">21,36 %<br><span class="fuente">igual</span></td><td class="n">21,36 %<br><span class="fuente">igual</span></td><td>Nada: dio la misma cifra.</td></tr>
+<tr><td>¿Cuál fue la nota promedio de las reseñas de los pedidos comprados en febrero de 2018?</td><td class="n">3,86</td><td class="n">3,86<br><span class="fuente">igual</span></td><td class="n">3,83<br><span class="fuente">distinta</span></td><td>Un pedido con dos reseñas contó doble, y no excluyó cancelados.</td></tr>
+<tr><td>¿Qué porcentaje de los vendedores que vendieron en noviembre de 2017 no vendió nada en diciembre de 2017?</td><td class="n">30,42 %</td><td class="n">30,42 %<br><span class="fuente">igual</span></td><td class="n">30,67 %<br><span class="fuente">distinta</span></td><td>Contó ventas de pedidos cancelados.</td></tr>
+<tr><td>¿Cuál fue la retención neta de GMV de noviembre de 2017? Es decir: de lo que vendían en octubre los vendedores que estaban activos, ¿qué porcentaje vendieron esos mismos vendedores en noviembre?</td><td class="n">126 %</td><td class="n">126 %<br><span class="fuente">igual</span></td><td class="n">126 %<br><span class="fuente">igual</span></td><td>Nada: dio la misma cifra.</td></tr>
+<tr><td>¿Cuál fue el MRR de agosto de 2018?</td><td class="n">no disponible</td><td class="n">no disponible<br><span class="fuente">igual</span></td><td class="n">no disponible<br><span class="fuente">igual</span></td><td>Nada: también dijo que no hay MRR.</td></tr></table>
+  <p class="fuente">"Igual" es la cifra oficial salvo redondeo; "cerca", a menos de 0,5 % pero otra cifra.
+  Son 12 preguntas con una corrida cada una: sirven para ver dónde y por qué cambian las respuestas,
+  no para dar un porcentaje de exactitud.</p>
+
+  <div class="junto">
+  <h3>Una respuesta real del agente, con la capa</h3>
+  <p><b>Pregunta:</b> "De los negocios que cerramos en el embudo comercial, ¿qué porcentaje hizo al menos una venta en sus primeros 90 días después del cierre?"</p><div class="respuesta"><p>El 43,33 % de los negocios cerrados hizo al menos una venta en sus primeros 90 días.</p><ul><li><b>Base:</b> 667 cierres con 90 días completos de observación, así que la muestra es fiable.</li><li><b>Definición:</b> métrica <code>tasa_activacion_90d</code>, diccionario versión 1.0.0.</li><li><b>Criterio de lectura:</b> solo cuentan los cierres hechos hasta inicios de junio de 2018. Los pedidos terminan el 31 de agosto de 2018, y los cierres más recientes no han tenido 90 días para activarse. Por eso se excluyen: incluirlos haría parecer que la activación cae, y no sería una caída real.</li></ul><p><b>Recomendación:</b> mira dónde se pierde el 57 % restante. Conviene abrir la activación por origen del lead o por segmento de negocio, para encontrar dónde se concentran los cierres que no venden. Para saber si funcionó, compara esta tasa a 90 días en las cohortes de cierre siguientes. Mantén la misma ventana, para que la comparación sea justa.</p></div><p class="fuente">Respuesta de Claude Code (claude-sonnet-5-5) en 5 segundos, con estas herramientas: consultar_metrica. Copiada de <code>pruebas/corridas/resultados.jsonl</code>; solo se quitó la última línea, que la prueba pide para leer la cifra.</p>
+  </div>
 </section>
 
 </main>

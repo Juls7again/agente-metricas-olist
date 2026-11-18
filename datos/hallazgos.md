@@ -51,7 +51,8 @@ En mayo de 2018 la tasa total baja a 10,0 % frente a una base de 13,9 %. Es una 
 - Retención neta: 126 %. En diciembre cae a 67 %.
 
 ### 4. Febrero y marzo de 2018: las entregas se retrasan
-- Entregas tardías: 16,0 % en febrero y **21,4 % en marzo**, frente a una base de 6 % a 7 %.
+- Entregas tardías: 16,0 % en febrero y **21,4 % en marzo**, frente a una base de 7,5 % (mediana de los
+  seis meses anteriores a marzo).
 - La nota de reseñas baja a 3,86 y 3,76.
 - Los datos no dicen la causa. No afirmar ninguna.
 

@@ -5,7 +5,12 @@ Las cifras y los gráficos salen del motor (capa/motor.py) y de consultas a dato
 hechas aquí mismo. Ningún número del documento se escribe a mano.
 
 Uso: .venv/Scripts/python.exe docs/generar_guia.py
-El PDF se exporta después abriendo el HTML en el navegador e imprimiendo en A4.
+El PDF se exporta después abriendo el HTML en el navegador e imprimiendo en A4. Con gstack browse:
+  $B goto file://./docs/guia-datos-y-proyecto.html
+  $B pdf docs/guia-datos-y-proyecto.pdf --format a4 --prefer-css-page-size --print-background \
+     --header-template '<div></div>' --footer-template '<div style="font-family:Segoe UI,Arial,sans-serif;
+     font-size:7.5pt;color:#7a7973;width:100%;text-align:center;">Agente de métricas sobre datos de Olist ·
+     <span class="pageNumber"></span> de <span class="totalPages"></span></div>'
 """
 import html
 import sys
@@ -259,6 +264,99 @@ def resumen_control(dic):
     return out
 
 
+# Qué hizo distinto el agente sin la capa. Sale de leer el SQL de cada corrida (pruebas/RESULTADOS.md):
+# es texto, no cifras, y las cifras de la tabla siguen saliendo de resultados.jsonl.
+QUE_HIZO_SIN_CAPA = {
+    "q01_gmv": "Sumó también los pedidos cancelados del mes.",
+    "q02_pedidos": "Contó todos los pedidos, incluidos cancelados, no disponibles y sin ítems.",
+    "q03_ticket": "Promedió los pagos, que incluyen el flete, sobre todos los pedidos.",
+    "q04_activacion": "Contó cierres que aún no tenían 90 días para vender (censura).",
+    "q05_activacion_online_big": "Lo mismo: contó cierres sin 90 días de observación.",
+    "q06_cierre_paid_search": "Incluyó leads de 2017, cuyos cierres no están registrados.",
+    "q09_nota": "Un pedido con dos reseñas contó doble, y no excluyó cancelados.",
+    "q10_churn": "Contó ventas de pedidos cancelados.",
+    "q12_mrr": "Nada: también dijo que no hay MRR.",
+}
+ETIQUETA_CLASE = {"igual": "igual", "cerca": "cerca", "distinta": "distinta", "sin_respuesta": "sin respuesta"}
+
+
+def fmt_control(v, unidad):
+    if v is None:
+        return "sin respuesta"
+    if isinstance(v, str):
+        return "no disponible" if v == "NO_DISPONIBLE" else esc(v)
+    dec = 0 if (unidad == "conteo" or float(v).is_integer()) else 2
+    return f"{num(v, dec)} %" if unidad == "%" else num(v, dec)
+
+
+def tabla_control(dic):
+    """Las preguntas de control, una por fila, desde preguntas_control.yml y resultados.jsonl."""
+    import json
+    sys.path.insert(0, str(RAIZ / "pruebas"))
+    from evaluar_agente import PREGUNTAS, RESULTADOS, clasificar
+    preguntas = yaml.safe_load(PREGUNTAS.read_text(encoding="utf-8"))["preguntas"]
+    ultimas = {}
+    for linea in RESULTADOS.read_text(encoding="utf-8").splitlines():
+        if linea.strip():
+            f = json.loads(linea)
+            ultimas[(f["id"], f["condicion"])] = f
+    filas = []
+    for q in preguntas:
+        unidad = dic["metricas"][q["esperado"]["metrica"]]["unidad"] if "metrica" in q["esperado"] else None
+        con, sin = ultimas.get((q["id"], "con_capa"), {}), ultimas.get((q["id"], "sin_capa"), {})
+        oficial = con.get("esperado", sin.get("esperado"))
+        c_con = clasificar(con.get("valor"), oficial, unidad, q.get("tol_abs", 0.0))
+        c_sin = clasificar(sin.get("valor"), oficial, unidad, q.get("tol_abs", 0.0))
+        nota = QUE_HIZO_SIN_CAPA.get(q["id"], "Nada: dio la misma cifra." if c_sin == "igual" else "")
+        filas.append(
+            f"<tr><td>{esc(' '.join(q['pregunta'].split()))}</td>"
+            f"<td class=\"n\">{fmt_control(oficial, unidad)}</td>"
+            f"<td class=\"n\">{fmt_control(con.get('valor'), unidad)}<br><span class=\"fuente\">{ETIQUETA_CLASE[c_con]}</span></td>"
+            f"<td class=\"n\">{fmt_control(sin.get('valor'), unidad)}<br><span class=\"fuente\">{ETIQUETA_CLASE[c_sin]}</span></td>"
+            f"<td>{esc(nota)}</td></tr>")
+    return ('<table class="control"><tr><th>Pregunta</th><th class="n">Cifra oficial</th><th class="n">Con capa</th>'
+            '<th class="n">Sin capa</th><th>Qué hizo distinto sin la capa</th></tr>' + "\n".join(filas) + "</table>")
+
+
+def respuesta_ejemplo(qid="q04_activacion"):
+    """Copia tal cual la respuesta del agente con la capa a una pregunta de control."""
+    import json
+    import re
+    sys.path.insert(0, str(RAIZ / "pruebas"))
+    from evaluar_agente import PREGUNTAS, RESULTADOS
+    pregunta = next(q for q in yaml.safe_load(PREGUNTAS.read_text(encoding="utf-8"))["preguntas"] if q["id"] == qid)
+    fila = None
+    for linea in RESULTADOS.read_text(encoding="utf-8").splitlines():
+        if linea.strip():
+            f = json.loads(linea)
+            if f["id"] == qid and f["condicion"] == "con_capa":
+                fila = f
+    texto = "\n".join(l for l in fila["respuesta"].strip().splitlines() if not l.startswith("RESPUESTA_FINAL"))
+
+    def en_linea(t):
+        t = esc(t)
+        t = re.sub(r"\*\*(.+?)\*\*", r"<b>\1</b>", t)
+        return re.sub(r"`(.+?)`", r"<code>\1</code>", t)
+
+    bloques, lista = [], []
+    for l in texto.strip().splitlines() + [""]:
+        if l.startswith("- "):
+            lista.append(f"<li>{en_linea(l[2:])}</li>")
+            continue
+        if lista:
+            bloques.append("<ul>" + "".join(lista) + "</ul>")
+            lista = []
+        if l.strip():
+            bloques.append(f"<p>{en_linea(l)}</p>")
+    herramientas = ", ".join(dict.fromkeys(ll["herramienta"].split("__")[-1] for ll in fila.get("llamadas", [])))
+    return (f'<p><b>Pregunta:</b> "{esc(" ".join(pregunta["pregunta"].split()))}"</p>'
+            f'<div class="respuesta">{"".join(bloques)}</div>'
+            f'<p class="fuente">Respuesta de Claude Code ({esc(fila.get("modelo_real") or fila["modelo"])}) en '
+            f'{num(fila["segundos"], 0)} segundos, con estas herramientas: {esc(herramientas)}. Copiada de '
+            f'<code>pruebas/corridas/resultados.jsonl</code>; solo se quitó la última línea, que la prueba pide '
+            f'para leer la cifra.</p>')
+
+
 # ----------------------------------------------------------------------------- piezas del documento
 def tabla_metricas(dic):
     filas = []
@@ -393,7 +491,7 @@ code { font: 8.8pt/1.3 Consolas, "Cascadia Mono", monospace; background: var(--s
   padding: 0 3px; border-radius: 3px; }
 b, strong { font-weight: 600; }
 .capitulo { break-before: page; page-break-before: always; }
-.portada { padding-top: 14mm; }
+.portada { padding-top: 4mm; }
 .eyebrow { font-size: 8.5pt; letter-spacing: .12em; text-transform: uppercase; color: var(--azul);
   font-weight: 600; margin-bottom: 10pt; }
 .subtitulo { font-size: 13pt; color: var(--tinta2); margin: 0 0 14pt; }
@@ -404,6 +502,18 @@ b, strong { font-weight: 600; }
 .cifra { border-top: 3px solid var(--azul); background: var(--suave); padding: 8pt 9pt 9pt; }
 .cifra b { display: block; font: 600 20pt/1.1 Georgia, serif; }
 .cifra span { font-size: 8.6pt; color: var(--tinta2); }
+.portada .autor { margin-bottom: 12pt; }
+.portada .cifras { margin: 10pt 0 12pt; }
+.resumen { display: grid; grid-template-columns: 32mm 1fr; gap: 5pt 12pt; margin: 0 0 4pt; }
+.resumen dt { font: 600 10.5pt/1.35 Georgia, serif; color: var(--azul); }
+.resumen dd { margin: 0; }
+.resumen .pasos { margin: 5pt 0 0; }
+.resumen .pasos li { margin-bottom: 3pt; }
+.control td, .control th { font-size: 8.4pt; }
+.respuesta { border: 1px solid var(--linea); border-radius: 4px; padding: 8pt 11pt; margin: 6pt 0 10pt;
+  font-size: 9.4pt; break-inside: avoid; }
+.respuesta ul { margin: 2pt 0 6pt; }
+.junto { break-inside: avoid; page-break-inside: avoid; }
 .pasos { counter-reset: paso; list-style: none; padding: 0; }
 .pasos li { counter-increment: paso; position: relative; padding-left: 24pt; margin-bottom: 6pt; }
 .pasos li::before { content: counter(paso); position: absolute; left: 0; top: 0; width: 16pt; height: 16pt;
@@ -470,35 +580,43 @@ pre { font: 8.6pt/1.45 Consolas, monospace; background: var(--suave); padding: 7
   forma de medirla.</p>
 
   <div class="cifras">
-    <div class="cifra"><b>11</b><span>tablas reales cargadas, todas cuadran con su CSV</span></div>
+    <div class="cifra"><b>$ctl_con de $ctl_n_con</b><span>preguntas de negocio con la cifra oficial usando la capa ($ctl_sin de $ctl_n_sin sin ella)</span></div>
     <div class="cifra"><b>23</b><span>métricas definidas en un solo diccionario</span></div>
-    <div class="cifra"><b>6</b><span>herramientas que el agente puede usar</span></div>
-    <div class="cifra"><b>107</b><span>pruebas automáticas en verde</span></div>
+    <div class="cifra"><b>107</b><span>pruebas automáticas en verde, contra un cálculo aparte</span></div>
+    <div class="cifra"><b>11</b><span>tablas reales cargadas, todas cuadran con su CSV</span></div>
   </div>
 
-  <h3>El problema que resuelve</h3>
-  <p>Cuando un asistente de IA escribe su propio SQL, responde rápido, pero con su propia versión de
-  cada métrica. Dos personas que preguntan lo mismo pueden recibir dos números distintos, y ninguno dice
-  qué contó ni qué dejó por fuera.</p>
-  <p>Aquí el asistente no inventa la métrica: se la pide a una capa que tiene <b>una sola definición de cada
-  una</b>. Es la misma que usaría un tablero o un analista.</p>
-
-  <h3>Cómo funciona, en cuatro pasos</h3>
-  <ol class="pasos">
-    <li>Los CSV de Olist se cargan en una base local (DuckDB) y se comprueba que no se perdió ninguna fila.</li>
-    <li>Cinco archivos SQL limpian los datos una sola vez: sacan los pedidos cancelados, evitan duplicados y
-    fijan ventanas de tiempo.</li>
-    <li>Un diccionario (<code>metricas.yml</code>) define las 23 métricas: fórmula, dueño, trampas conocidas y
-    equivalente en SaaS.</li>
-    <li>Un servidor MCP le da a Claude Code seis herramientas para usar ese diccionario. Claude Code no calcula
-    cifras oficiales por su cuenta.</li>
-  </ol>
-
-  <div class="caja">
-    <p><b>Cómo se construyó.</b> Con Claude Code, el 15 de noviembre de 2026. Julián tomó las decisiones de
-    producto y de datos: construir un agente nuevo, usar datos reales en vez de simulados, escoger Olist y
-    definir cómo se entrega. Claude Code escribió el código, el SQL y las pruebas a partir de esas decisiones.</p>
-  </div>
+  <dl class="resumen">
+    <dt>Qué problema resuelve</dt>
+    <dd>Cuando un asistente de IA escribe su propio SQL, responde rápido, pero con su propia versión de cada
+    métrica. Dos personas que preguntan lo mismo pueden recibir dos números distintos, y ninguno dice qué
+    contó ni qué dejó por fuera.</dd>
+    <dt>Cómo se abordó</dt>
+    <dd>El asistente no inventa la métrica: se la pide a una capa que tiene <b>una sola definición de cada
+    una</b>, la misma que usaría un tablero o un analista.
+    <ol class="pasos">
+      <li>Los CSV de Olist se cargan en una base local (DuckDB) y se comprueba que no se perdió ninguna fila.</li>
+      <li>Cinco archivos SQL limpian los datos una sola vez: sacan los pedidos cancelados, evitan duplicados y
+      fijan ventanas de tiempo.</li>
+      <li>Un diccionario (<code>metricas.yml</code>) define las 23 métricas: fórmula, dueño, trampas conocidas y
+      equivalente en SaaS.</li>
+      <li>Un servidor MCP le da al agente seis herramientas para usar ese diccionario. El agente no calcula
+      cifras oficiales por su cuenta.</li>
+    </ol></dd>
+    <dt>Herramientas usadas</dt>
+    <dd>Claude Code, para construir el proyecto y como agente que responde (modelo Claude Sonnet en las pruebas
+    y la demo). MCP (Model Context Protocol), para conectar el agente con la capa. Python, DuckDB y SQL para
+    los datos; YAML para el diccionario; pandas y pytest para comprobar cada cifra.
+    <b>Cómo se repartió el trabajo:</b> Julián tomó las decisiones de producto y de datos (un agente nuevo, datos
+    reales y no simulados, Olist, la forma de entrega); Claude Code escribió el código, el SQL y las pruebas a
+    partir de ellas, el 15 de noviembre de 2026.</dd>
+    <dt>Resultado obtenido</dt>
+    <dd>Las mismas $ctl_n_con preguntas de negocio a Claude Code: <b>con la capa, $ctl_con de $ctl_n_con dieron la
+    cifra oficial; solo con SQL libre, $ctl_sin de $ctl_n_sin</b>. 107 pruebas comparan cada métrica con un cálculo
+    aparte en pandas. Y los datos reales dieron hallazgos para decidir: solo $act_tot % de los cierres vende en sus
+    primeros 90 días, y los leads online_big se activan $act_big % frente a $act_off % de los offline
+    (sección 6).</dd>
+  </dl>
 </section>
 
 <!-- ======================================================================= 1. DATOS -->
@@ -737,7 +855,7 @@ pre { font: 8.6pt/1.45 Consolas, monospace; background: var(--suave); padding: 7
   <table>
     <tr><th>Prueba</th><th>Qué demuestra</th><th>Resultado</th></tr>
     <tr><td>Carga</td><td>Cada tabla tiene las mismas filas que su CSV.</td><td>11 de 11</td></tr>
-    <tr><td>Recalculo independiente</td><td>Las métricas del motor coinciden con un cálculo aparte en pandas, leyendo los CSV crudos.</td><td rowspan="5"><b>107 pruebas en verde</b> (pytest, unos 2 minutos)</td></tr>
+    <tr><td>Recalculo independiente</td><td>Las métricas del motor coinciden con un cálculo aparte en pandas, leyendo los CSV crudos.</td><td rowspan="5"><b>107 pruebas en verde</b> (pytest, unos 5 minutos)</td></tr>
     <tr><td>Conciliación de movimientos</td><td>En cada mes, GMV anterior + nuevo + expansión + reactivación − contracción − bajas = GMV del mes.</td></tr>
     <tr><td>Trampas</td><td>Unir con pagos infla el GMV 4,5 % (se comprueba el número), los cancelados no entran y la censura está controlada.</td></tr>
     <tr><td>Seguridad del SQL libre</td><td>Se rechazan escrituras, borrados, varias sentencias, lectura de archivos y filtros con SQL escondido.</td></tr>
@@ -752,7 +870,8 @@ pre { font: 8.6pt/1.45 Consolas, monospace; background: var(--suave); padding: 7
     seguridad, pero con su propia definición: contó pedidos cancelados, usó los pagos (que incluyen flete)
     para el ticket, cayó en la censura de la activación e incluyó leads de 2017 cuyos cierres no están
     registrados. No calculó mal: definió distinto. Con la capa, las 12 respuestas dieron la cifra oficial.
-    El detalle, con el SQL que usó en cada caso, está en <code>pruebas/RESULTADOS.md</code>.</p>
+    El detalle pregunta por pregunta está en el anexo, al final de esta guía; con el SQL que usó el agente en
+    cada caso, en <code>pruebas/RESULTADOS.md</code>.</p>
   </div>
 
   <h3>Decisiones de diseño y por qué</h3>
@@ -785,7 +904,8 @@ pre { font: 8.6pt/1.45 Consolas, monospace; background: var(--suave); padding: 7
     $g_act_tipo
     <div class="fuente">En gris, segmentos con menos de 30 cierres: el motor los marca como no fiables.</div>
   </figure>
-  <p>Por tipo de negocio: revendedor $act_rev % y $gmv_rev BRL por cierre ($n_rev cierres); fabricante
+  <p>Los cierres online_big se activan $act_big % y venden $gmv_big BRL por cierre en 90 días; los offline,
+  $act_off % y $gmv_off BRL. Por tipo de negocio: revendedor $act_rev % y $gmv_rev BRL por cierre ($n_rev cierres); fabricante
   $act_fab % y $gmv_fab BRL ($n_fab). Por origen: búsqueda pagada $act_paid % y búsqueda orgánica $act_org %.
   <b>Límite:</b> el tipo de lead solo existe en los negocios cerrados. Se sabe que unos venden más una vez
   cerrados, no si cierran más.</p>
@@ -845,32 +965,56 @@ pre { font: 8.6pt/1.45 Consolas, monospace; background: var(--suave); padding: 7
 
 <!-- ======================================================================= ESTADO -->
 <section>
-  <h2><span class="num">7</span>Estado y lo que falta</h2>
-  <h3>Hecho</h3>
+  <h2><span class="num">7</span>Para Alegra</h2>
+  <h3>Lo que pide el cargo y dónde está en el proyecto</h3>
+  <table>
+    <tr><th>Lo que pide el aviso del cargo</th><th>Dónde está</th></tr>
+    <tr><td>Una capa analítica lista para agentes: definiciones, diccionarios y modelos de datos que otros asistentes puedan consumir.</td><td>El diccionario (<code>metricas.yml</code>), las vistas SQL y el servidor MCP. Las reglas para responder viajan con el servidor: las recibe cualquier asistente que se conecte.</td></tr>
+    <tr><td>Agentes de autoservicio para que los equipos respondan preguntas sencillas.</td><td>El agente responde en español, con la definición usada, la fiabilidad del número y una recomendación.</td></tr>
+    <tr><td>Usar agentes y LLMs para detectar anomalías y automatizar análisis.</td><td><code>detectar_anomalias</code> y <code>descomponer_cambio</code>. Marcaron noviembre de 2017, marzo de 2018 y mayo de 2018 (sección 6).</td></tr>
+    <tr><td>Documentación analítica: diccionarios de métricas, definiciones y criterios de lectura.</td><td>Cada una de las 23 métricas trae definición, fórmula, criterios de lectura, con qué no confundirla y dueño (sección 4).</td></tr>
+    <tr><td>Funnels, cohortes, conversión, retención, churn y expansión.</td><td>Embudo, activación, cohortes, retención neta y bruta, churn y movimientos de GMV.</td></tr>
+    <tr><td>Métricas SaaS: ARR/MRR, NRR, CAC, LTV, churn y expansión.</td><td>Cada métrica dice su equivalente en SaaS. NRR, GRR, churn y expansión se calculan sobre el GMV. MRR, CAC y LTV no se aproximan: los datos no los tienen.</td></tr>
+    <tr><td>Aterrizar definiciones con los equipos dueños de cada proceso.</td><td>Cada métrica tiene dueño: Growth, Sales, Product, Finance u Operaciones.</td></tr>
+    <tr><td>Convertir hallazgos en decisiones y medir el impacto.</td><td>Regla del agente: cerrar con una recomendación concreta y cómo medir si funcionó.</td></tr>
+    <tr><td>SQL avanzado para extraer, transformar, validar y modelar datos.</td><td>Cinco archivos de vistas SQL y 107 pruebas que comparan cada métrica con un cálculo aparte.</td></tr>
+  </table>
+
+  <h3>Límites</h3>
   <ul>
-    <li>Datos reales cargados y comprobados (11 tablas).</li>
-    <li>Cinco archivos de vistas SQL, diccionario de 23 métricas, motor y servidor MCP con seis herramientas.</li>
-    <li>107 pruebas en verde, prueba de mutación y prueba del servidor como cliente.</li>
-    <li>Primera pregunta real respondida por Claude Code de punta a punta.</li>
-    <li>Preguntas de control con y sin la capa: $ctl_con de $ctl_n_con contra $ctl_sin de $ctl_n_sin.</li>
-    <li>Reglas para responder dentro del servidor y versión del diccionario en cada respuesta.</li>
-    <li>README con atribución a Olist y licencia.</li>
-    <li>Hallazgos y preguntas candidatas para la demo (<code>datos/hallazgos.md</code>).</li>
-  </ul>
-  <h3>Falta</h3>
-  <ul>
-    <li>Copia limpia del trabajo en Beemo para los primeros segundos del video.</li>
-    <li>Guion (meta: 4 minutos 40 segundos), ensayos y grabación.</li>
-    <li>Entrega en Teamtailor: el video, este PDF, el código sin los datos y las capturas.</li>
+    <li>Los leads son una muestra aleatoria de 8.000, no el total.</li>
+    <li>Hay pocos cierres por mes. Por eso cada métrica tiene una muestra mínima y marca lo que no es fiable.</li>
+    <li>Los datos no traen suscripciones, precios ni gasto de adquisición. No hay MRR, ARR, CAC ni LTV, y no se
+    aproximan con el GMV.</li>
+    <li>La capa corre en local. Para un equipo, el diccionario iría en un repositorio con revisión de cambios,
+    los datos en el warehouse y el servidor desplegado con una URL compartida.</li>
   </ul>
 
+  <h3>Primer mes en Alegra</h3>
+  <p>Hacer lo mismo con sus datos: acordar con cada equipo las métricas que más se discuten, escribirlas en el
+  diccionario con su dueño y conectar el agente al warehouse.</p>
+
   <h3>Cómo correrlo</h3>
-  <pre>uv venv .venv
+  <pre># Entorno (Python 3.13 y uv)
+uv venv .venv
 uv pip install -r requirements.txt
-.venv/Scripts/python.exe -I datos/cargar.py          # carga los CSV a datos/olist.duckdb
-.venv/Scripts/python.exe -m pytest pruebas -q        # 107 pruebas
-.venv/Scripts/python.exe pruebas/probar_servidor.py  # llama las 6 herramientas
-claude                                               # Claude Code, con el servidor y las reglas</pre>
+
+# Datos públicos de Kaggle, sin iniciar sesión
+mkdir -p datos/crudos
+curl -L -o datos/crudos/embudo.zip \
+  https://www.kaggle.com/api/v1/datasets/download/olistbr/marketing-funnel-olist
+curl -L -o datos/crudos/pedidos.zip \
+  https://www.kaggle.com/api/v1/datasets/download/olistbr/brazilian-ecommerce
+
+# Carga a DuckDB, con chequeo de filas contra cada CSV
+.venv/Scripts/python.exe -I datos/cargar.py datos/crudos datos/olist.duckdb
+
+# 107 pruebas y prueba de las 6 herramientas del servidor
+.venv/Scripts/python.exe -m pytest pruebas -q
+.venv/Scripts/python.exe pruebas/probar_servidor.py
+
+# Claude Code con el servidor metricas (antes, ajustar las rutas de .mcp.json a la carpeta local)
+claude</pre>
 
   <h3>Glosario</h3>
   <dl class="glosario">
@@ -892,6 +1036,25 @@ claude                                               # Claude Code, con el servi
   <p class="fuente">Datos: Olist, "Marketing Funnel by Olist" y "Brazilian E-Commerce Public Dataset by Olist",
   Kaggle, licencia CC BY-NC-SA 4.0. Este documento se genera con <code>docs/generar_guia.py</code>; todas sus
   cifras salen del motor de métricas.</p>
+</section>
+
+<!-- ======================================================================= ANEXO -->
+<section class="capitulo">
+  <h2><span class="num">A</span>Anexo: la evidencia de las preguntas de control</h2>
+  <p>Las mismas $ctl_n_con preguntas de negocio, escritas como las haría alguien de negocio y sin dar la
+  definición, se le hicieron a Claude Code (Sonnet) en dos condiciones. <b>Con capa:</b> solo las seis
+  herramientas del servidor. <b>Sin capa:</b> solo SQL de lectura sobre las tablas crudas, desde una carpeta
+  vacía, sin ver el diccionario, las vistas ni las trampas. La cifra oficial la calcula el motor. Las
+  conversaciones completas están en <code>pruebas/corridas/</code>.</p>
+  $tabla_control
+  <p class="fuente">"Igual" es la cifra oficial salvo redondeo; "cerca", a menos de 0,5 % pero otra cifra.
+  Son $ctl_n_con preguntas con una corrida cada una: sirven para ver dónde y por qué cambian las respuestas,
+  no para dar un porcentaje de exactitud.</p>
+
+  <div class="junto">
+  <h3>Una respuesta real del agente, con la capa</h3>
+  $respuesta_ejemplo
+  </div>
 </section>
 
 </main>
@@ -1009,9 +1172,9 @@ def diagrama_arquitectura():
     s.append(flecha(330, 66, 412, 110))
     s.append(caja(534, 112, 120, 46, "Pruebas", "107, contra pandas", color=GRIS))
     s.append(f'<line x1="532" y1="135" x2="504" y2="135" stroke="{TINTA2}" stroke-width="1.3" stroke-dasharray="4 3" marker-end="url(#punta)"/>')
-    s.append(caja(390, 194, 112, 46, "servidor_mcp.py", "6 herramientas"))
+    s.append(caja(390, 194, 112, 46, "servidor_mcp.py", "6 herramientas + reglas"))
     s.append(flecha(446, 158, 446, 192))
-    s.append(caja(180, 194, 150, 46, "Claude Code", "+ CLAUDE.md (reglas)", color=TINTA, grosor=2))
+    s.append(caja(180, 194, 150, 46, "Claude Code", "u otro asistente MCP", color=TINTA, grosor=2))
     s.append(f'<line x1="388" y1="217" x2="332" y2="217" stroke="{TINTA2}" stroke-width="1.3" marker-end="url(#punta)" marker-start="url(#punta)"/>')
     s.append(caja(6, 194, 120, 46, "Persona", "pregunta en español", color=GRIS))
     s.append(f'<line x1="178" y1="217" x2="128" y2="217" stroke="{TINTA2}" stroke-width="1.3" marker-end="url(#punta)" marker-start="url(#punta)"/>')
@@ -1038,6 +1201,7 @@ def main():
     origen = d["act_origen"]
     neg = d["act_negocio"]
     g90n = d["gmv90_negocio"]
+    tipo = {f["tipo_lead"]: f for f in d["act_tipo"]}
 
     valores = {
         "leads": num(t["marketing_qualified_leads"]), "cierres": num(t["closed_deals"]),
@@ -1056,6 +1220,9 @@ def main():
         "cens_min": num(min(vent)), "cens_max": num(max(vent)),
         "act_n": num(d["act_tot"]["muestra"]), "act_tot": num(d["act_tot"]["valor"], 1),
         "gmv90_tot": num(d["gmv90_tot"]["valor"]),
+        "act_big": num(tipo["online_big"]["valor"], 1), "gmv_big": num(d["gmv90_tipo"]["online_big"]["valor"]),
+        "act_off": num(tipo["offline"]["valor"], 1), "gmv_off": num(d["gmv90_tipo"]["offline"]["valor"]),
+        "tabla_control": tabla_control(d["dic"]), "respuesta_ejemplo": respuesta_ejemplo(),
         "act_rev": num(neg["reseller"]["valor"], 1), "gmv_rev": num(g90n["reseller"]["valor"]),
         "n_rev": neg["reseller"]["muestra"],
         "act_fab": num(neg["manufacturer"]["valor"], 1), "gmv_fab": num(g90n["manufacturer"]["valor"]),

@@ -6,3 +6,9 @@ datos/*.duckdb
 datos/*.duckdb.wal
 .pytest_cache/
 .gstack/
+
+# Copias para subir a Teamtailor (no van al repositorio)
+PARA COMPARTIR/
+
+# Notas internas de grabación del video (no se publican)
+video/
