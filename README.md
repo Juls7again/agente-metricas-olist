@@ -9,13 +9,13 @@ Analytics Partner de Alegra (noviembre de 2026).
 
 ## Para quien evalúa
 
-| | |
+| Lo que pide el reto | Respuesta |
 |---|---|
 | **Qué problema resuelve** | Un asistente de IA que escribe su propio SQL da cifras con su propia definición: dos personas que preguntan lo mismo reciben números distintos. |
 | **Cómo se abordó** | Una capa de métricas con una sola definición de cada una (vistas SQL + diccionario + motor), servida al agente por MCP. El agente pide la métrica; no la calcula. |
 | **Herramientas usadas** | Claude Code (para construir y como agente, con Claude Sonnet), MCP, Python, DuckDB, SQL, YAML, pandas, pytest y uv. |
 | **Resultado obtenido** | Mismas 12 preguntas de negocio: **12 de 12 con la cifra oficial usando la capa, 4 de 12 sin ella**. 107 pruebas automáticas contra un cálculo aparte en pandas. |
-| **Dónde leer más** | `docs/guia-datos-y-proyecto.pdf` (guía completa, con la evidencia en el anexo) y `pruebas/RESULTADOS.md`. |
+| **Dónde leer más** | [Guía del proyecto en PDF](docs/guia-datos-y-proyecto.pdf) (completa, con la evidencia en el anexo) y [resultados de las preguntas de control](pruebas/RESULTADOS.md). |
 
 Julián tomó las decisiones de producto y de datos (un agente nuevo, datos reales y no simulados,
 Olist, la forma de entrega). Claude Code escribió el código, el SQL y las pruebas a partir de
